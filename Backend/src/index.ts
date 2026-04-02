@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 8000;
 app.use(cors());
 app.use(express.json()); 
 
-app.get('/api/health', (req, res) => {
+app.get('/', (req, res) => {
     res.status(200).json({ status: 'Platform is running smoothly' });
 });
 

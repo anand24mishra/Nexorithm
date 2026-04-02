@@ -1,0 +1,5 @@
+# Common .gitignore
+
+# OS and logs
+.DS_Store
+*.log

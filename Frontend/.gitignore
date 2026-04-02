@@ -1,0 +1,14 @@
+# Frontend .gitignore
+
+# Node modules and build
+node_modules/
+build/
+dist/
+
+# Environment files
+.env
+.env.local
+
+# Editor/OS files
+.vscode/
+.DS_Store
