@@ -2,97 +2,202 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
+import { IExecutor } from '../interfaces/IExecutor';
+import { ExecutionResult, Language } from '../types';
+import { AppError } from '../errors/AppError';
 
-export abstract class BaseExecutor {
+// ─── Base Executor (Template Method Pattern) ────────────────────────────────
 
-    // 🔹 Template Method (final flow)
-    async execute(code: string, input: string): Promise<string> {
-        const filePath = this.createFilePath();
+abstract class BaseExecutor implements IExecutor {
+  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
+    const uniqueId = uuidv4();
+    const ext = this.getFileExtension();
+    const filePath = path.join('/tmp', `nexorithm-${uniqueId}.${ext}`);
+    const startTime = performance.now();
 
-        try {
-            // Step 1: write code
-            this.writeCodeToFile(filePath, code);
+    try {
+      fs.writeFileSync(filePath, code, 'utf8');
+      const command = this.getCommand(filePath);
 
-            // Step 2: build command (language-specific)
-            const command = this.getCommand(filePath);
+      const stdout = execSync(command, {
+        input,
+        timeout: timeoutMs,
+        encoding: 'utf8',
+        maxBuffer: 1024 * 1024,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-            // Step 3: execute
-            const output = this.runCommand(command, input);
+      const executionTimeMs = Math.round(performance.now() - startTime);
 
-            return output.trim();
+      return {
+        stdout: stdout.trim(),
+        stderr: '',
+        exitCode: 0,
+        timedOut: false,
+        executionTimeMs,
+      };
+    } catch (error: unknown) {
+      const executionTimeMs = Math.round(performance.now() - startTime);
+      const execError = error as {
+        killed?: boolean;
+        signal?: string;
+        status?: number;
+        stderr?: string | Buffer;
+        stdout?: string | Buffer;
+        message?: string;
+      };
 
-        } finally {
-            // Step 4: cleanup (always runs)
-            this.cleanup(filePath);
-        }
-    }
+      if (execError.killed || execError.signal === 'SIGTERM') {
+        return {
+          stdout: '',
+          stderr: 'Time Limit Exceeded',
+          exitCode: 1,
+          timedOut: true,
+          executionTimeMs,
+        };
+      }
 
-    // 🔹 Abstract methods (must be implemented by child classes)
-    protected abstract getCommand(filePath: string): string;
-    protected abstract getFileExtension(): string;
-
-    // 🔹 Common helpers
-
-    private createFilePath(): string {
-        const uniqueId = uuidv4();
-        const extension = this.getFileExtension();
-        return path.join('/tmp', `${uniqueId}.${extension}`);
-    }
-
-    private writeCodeToFile(filePath: string, code: string): void {
-        fs.writeFileSync(filePath, code, 'utf8');
-    }
-
-    private runCommand(command: string, input: string): string {
-        return execSync(command, {
-            input,
-            timeout: 2000,
-            encoding: 'utf8',
-        });
-    }
-
-    private cleanup(filePath: string): void {
+      return {
+        stdout: String(execError.stdout ?? '').trim(),
+        stderr: String(execError.stderr ?? execError.message ?? 'Unknown error').trim(),
+        exitCode: execError.status ?? 1,
+        timedOut: false,
+        executionTimeMs,
+      };
+    } finally {
+      try {
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+          fs.unlinkSync(filePath);
         }
+      } catch {
+        // Cleanup failure is non-critical
+      }
     }
+  }
+
+  protected abstract getCommand(filePath: string): string;
+  protected abstract getFileExtension(): string;
 }
 
-
-// export interface CodeExecutor {
-//     execute(code: string, testCases: any[]): Promise<string>;
-// }
-
-export class PythonExecutor extends BaseExecutor {
-    protected getCommand(filePath: string): string {
-        return `python3 ${filePath}`;
-    }
-
-    protected getFileExtension(): string {
-        return 'py';
-    }
-}
-
+// ─── Concrete Executors (Strategy Pattern) ──────────────────────────────────
 
 export class JavascriptExecutor extends BaseExecutor {
+  protected getCommand(filePath: string): string {
+    return `node "${filePath}"`;
+  }
 
-    protected getCommand(filePath: string): string {
-        return `node ${filePath}`;
+  protected getFileExtension(): string {
+    return 'js';
+  }
+
+  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
+    const runnerCode = `
+${code}
+
+const fs = require('fs');
+function __main__() {
+    const inputStr = fs.readFileSync(0, 'utf-8').trim();
+    if (!inputStr) return;
+    const lines = inputStr.split('\\n');
+    let args = lines.map(line => {
+        try { return JSON.parse(line); } catch(e) { return line; }
+    });
+    
+    // Find the user's function
+    let funcName = null;
+    const varMatch = ${JSON.stringify(code)}.match(/var\\s+([a-zA-Z0-9_]+)\\s*=\\s*function/);
+    const fnMatch = ${JSON.stringify(code)}.match(/function\\s+([a-zA-Z0-9_]+)/);
+    
+    if (varMatch && varMatch[1]) {
+        funcName = varMatch[1];
+    } else if (fnMatch && fnMatch[1]) {
+        funcName = fnMatch[1];
     }
-
-    protected getFileExtension(): string {
-        return 'js';
+    
+    if (funcName && typeof eval(funcName) === 'function') {
+        const result = eval(funcName)(...args);
+        if (result !== undefined) {
+             console.log(JSON.stringify(result).replace(/\\s/g, ''));
+        }
+    } else {
+        console.error("Could not find the solution function.");
     }
 }
+__main__();
+`;
+    return super.execute(runnerCode, input, timeoutMs);
+  }
+}
+
+export class PythonExecutor extends BaseExecutor {
+  protected getCommand(filePath: string): string {
+    return `python3 "${filePath}"`;
+  }
+
+  protected getFileExtension(): string {
+    return 'py';
+  }
+
+  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
+    const runnerCode = `
+import sys
+import json
+
+${code}
+
+if __name__ == '__main__':
+    input_str = sys.stdin.read().strip()
+    if not input_str:
+        sys.exit(0)
+    lines = input_str.split('\\n')
+    args = []
+    for line in lines:
+        try:
+            args.append(json.loads(line))
+        except Exception:
+            args.append(line)
+            
+    try:
+        sol = Solution()
+        methods = [m for m in dir(sol) if not m.startswith('__')]
+        if not methods:
+            print("No methods found in Solution class.", file=sys.stderr)
+            sys.exit(1)
+        
+        # Get the defined function
+        func = getattr(sol, methods[-1])
+        result = func(*args)
+        if result is not None:
+            # Format python lists and dicts natively back as JSON output 
+            output = json.dumps(result, separators=(',', ':'))
+            # Boolean conversions for exact string match
+            output = output.replace('true', 'true').replace('false', 'false')
+            print(output)
+    except NameError:
+        print("Solution class not found.", file=sys.stderr)
+        sys.exit(1)
+`;
+    return super.execute(runnerCode, input, timeoutMs);
+  }
+}
+
+// ─── Factory (Factory + Strategy combined) ──────────────────────────────────
+
 export class ExecutorFactory {
-    static getExecutor(language: string): BaseExecutor {
-        switch (language.toLowerCase()) {
-            case 'python':
-                return new PythonExecutor();
-            case 'javascript':
-                return new JavascriptExecutor();
-            default:
-                throw new Error(`Execution for language ${language} is not supported yet.`);
-        }
+  private static readonly executors: Map<Language, IExecutor> = new Map<Language, IExecutor>([
+    [Language.JAVASCRIPT, new JavascriptExecutor()],
+    [Language.PYTHON, new PythonExecutor()],
+  ]);
+
+  static getExecutor(language: Language): IExecutor {
+    const executor = this.executors.get(language);
+    if (!executor) {
+      throw new AppError(`Unsupported language: ${language}`, 400);
     }
+    return executor;
+  }
+
+  static getSupportedLanguages(): Language[] {
+    return Array.from(this.executors.keys());
+  }
 }

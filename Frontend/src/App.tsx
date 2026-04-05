@@ -1,0 +1,25 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { WorkspacePage } from './pages/WorkspacePage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { AuthProvider } from './context/AuthContext';
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/problem/:slug" element={<WorkspacePage />} />
+          <Route path="/problem/:slug/analytics" element={<AnalyticsPage />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
+}
+
+export default App;

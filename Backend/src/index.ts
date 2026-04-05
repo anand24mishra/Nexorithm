@@ -1,46 +1,104 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { ExecutorFactory } from './services/executorFactory';
-import submitRoutes from './routes/submit.routes';
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 8000;
+import { loadConfig } from './config';
+import { connectDatabase } from './config/database';
+import { globalErrorHandler } from './middleware/errorHandler';
+import { authenticateToken } from './middleware/auth.middleware';
 
-app.use(cors());
-app.use(express.json()); 
+// Repositories
+import { MockProblemRepository } from './repositories/MockProblemRepository';
+import { MockSubmissionRepository } from './repositories/MockSubmissionRepository';
+import { MongoProblemRepository } from './repositories/MongoProblemRepository';
+import { MongoSubmissionRepository } from './repositories/MongoSubmissionRepository';
 
-app.get('/', (req, res) => {
-    res.status(200).json({ status: 'Platform is running smoothly' });
-});
+// Services
+import { JudgeService } from './services/judge.service';
+import { ProblemService } from './services/problem.service';
+import { SubmissionService } from './services/submission.service';
+import { AuthService } from './services/auth.service';
 
-// for testing the executor factory independently
-app.use('/api/test-executor', submitRoutes);
+// External API
+import { LeetCodeApiClient } from './api/external/LeetCodeApiClient';
 
-app.post('/api/submissions', async (req: Request, res: Response) => {
-    try {
-        const { language, code } = req.body;
+// Controllers
+import { ProblemController } from './controllers/problem.controller';
+import { SubmissionController } from './controllers/submit.controller';
 
-        if (!language || !code) {
-             res.status(400).json({ error: 'Language and code are required' });
-             return;
-        }
+// Routes
+import { createProblemRoutes } from './routes/problem.routes';
+import { createSubmissionRoutes } from './routes/submit.routes';
+import { createAuthRoutes } from './routes/auth.routes';
 
-        const executor = ExecutorFactory.getExecutor(language);
-        
-        const result = await executor.execute(code, ''); // For simplicity, using empty input. In a real scenario, this would come from the test cases.
+async function bootstrap(): Promise<void> {
+  const config = loadConfig();
+  const app = express();
 
-        res.status(200).json({
-            status: 'Success',
-            verdict: result
-        });
+  // ─── Middleware ──────────────────────────────────────────────────
+  app.use(cors());
+  app.use(express.json({ limit: '5mb' }));
 
-    } catch (error: any) {
-        res.status(500).json({ error: error.message });
-    }
-});
+  // ─── Database (conditional) ─────────────────────────────────────
+  if (config.useDb && config.mongodbUri) {
+    await connectDatabase(config.mongodbUri);
+  }
 
-app.listen(PORT, () => {
-    console.log(`Judge Backend running on http://localhost:${PORT}`);
+  // ─── Dependency Injection ───────────────────────────────────────
+  const problemRepo =
+    config.useDb && config.mongodbUri
+      ? new MongoProblemRepository()
+      : new MockProblemRepository();
+
+  const submissionRepo =
+    config.useDb && config.mongodbUri
+      ? new MongoSubmissionRepository()
+      : new MockSubmissionRepository();
+
+  const externalApi = new LeetCodeApiClient();
+  const judgeService = new JudgeService();
+  const problemService = new ProblemService(problemRepo, externalApi);
+  const submissionService = new SubmissionService(
+    judgeService,
+    submissionRepo,
+    problemRepo
+  );
+  const authService = new AuthService(config.jwtSecret);
+
+  const problemController = new ProblemController(problemService);
+  const submissionController = new SubmissionController(submissionService);
+
+  // ─── Routes ─────────────────────────────────────────────────────
+  app.get('/api/health', (_req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      dbConnected: config.useDb,
+    });
+  });
+
+  app.use('/api/problems', createProblemRoutes(problemController));
+  app.use(
+    '/api/submissions',
+    createSubmissionRoutes(submissionController, authenticateToken(config.jwtSecret))
+  );
+  app.use('/api/auth', createAuthRoutes(authService));
+
+  // ─── Global Error Handler ──────────────────────────────────────
+  app.use(globalErrorHandler);
+
+  // ─── Start Server ──────────────────────────────────────────────
+  app.listen(config.port, () => {
+    console.log(
+      `Nexorithm Backend running on http://localhost:${config.port}`
+    );
+    console.log(`   Mode: ${config.nodeEnv}`);
+    console.log(`   Database: ${config.useDb ? 'MongoDB' : 'In-Memory'}`);
+  });
+}
+
+bootstrap().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
