@@ -25,11 +25,17 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'SET_PROBLEM':
       return { ...state, problemId: action.payload.problemId, code: action.payload.code, lastResult: null, consoleOutput: '' };
     case 'RUN_START':
-      return { ...state, isRunning: true, lastResult: null, consoleOutput: 'Running...', activeTab: 'result' };
+      return { ...state, isRunning: true, isSubmitting: false, lastResult: null, consoleOutput: 'Running...', activeTab: 'result' };
     case 'RUN_SUCCESS':
       return { ...state, isRunning: false, lastResult: action.payload, consoleOutput: '', activeTab: 'result' };
     case 'RUN_ERROR':
       return { ...state, isRunning: false, consoleOutput: action.payload, activeTab: 'result' };
+    case 'SUBMIT_START':
+      return { ...state, isSubmitting: true, isRunning: false, lastResult: null, consoleOutput: 'Submitting...', activeTab: 'result' };
+    case 'SUBMIT_SUCCESS':
+      return { ...state, isSubmitting: false, lastResult: { ...action.payload, isSubmit: true }, consoleOutput: '', activeTab: 'result' };
+    case 'SUBMIT_ERROR':
+      return { ...state, isSubmitting: false, consoleOutput: action.payload, activeTab: 'result' };
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
     case 'SET_FONT_SIZE':
@@ -50,7 +56,7 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
 
-// Export as separate named functions to satisfy Vite HMR fast-refresh rules
+
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
   return (

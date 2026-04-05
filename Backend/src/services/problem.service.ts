@@ -8,6 +8,7 @@ import {
   Difficulty,
 } from '../types';
 
+import { seedProblems } from '../data/seedProblems';
 export class ProblemService {
   constructor(
     private readonly repo: IProblemRepository,
@@ -28,11 +29,11 @@ export class ProblemService {
   }
 
   async getProblemBySlug(slug: string): Promise<NexorithmProblem | null> {
-    // 1. Check local repo first
+    
     const cached = await this.repo.findBySlug(slug);
     if (cached) return cached;
 
-    // 2. Try Tier 1 (Vercel proxy)
+    
     try {
       const raw = await this.externalApi.fetchFromVercel(slug);
       const mapped = this.mapVercelToProblem(raw);
@@ -44,7 +45,7 @@ export class ProblemService {
       console.warn(`Tier 1 (Vercel) failed for "${slug}":`, err);
     }
 
-    // 3. Fallback to Tier 2 (LeetCode GraphQL)
+    
     try {
       const raw = await this.externalApi.fetchFromGraphQL(slug);
       const mapped = this.mapGraphQLToProblem(raw);
@@ -77,7 +78,7 @@ export class ProblemService {
       console.warn('Daily challenge fetch failed:', err);
     }
 
-    // Fallback: return first seed problem
+    
     const { problems } = await this.repo.findAll({ page: 1, limit: 1 });
     if (problems.length > 0) {
       return this.repo.findBySlug(problems[0].slug);
@@ -87,11 +88,11 @@ export class ProblemService {
 
   async seedProblems(limit: number = 100): Promise<{ count: number; slugs: string[] }> {
     try {
-      // 1. Fetch bulk problem list
+      
       let slugsToFetch: string[] = [];
       const listRaw = await this.externalApi.fetchProblemList({ page: 1, limit });
       
-      // Vercel returns an Array of { title_slug: string } directly in some endpoints
+      
       if (Array.isArray(listRaw)) {
         slugsToFetch = listRaw.map(item => item.title_slug || item.titleSlug).filter(Boolean) as string[];
       } else {
@@ -110,7 +111,7 @@ export class ProblemService {
       let count = 0;
       const seededSlugs: string[] = [];
 
-      // 2. Iterate and cache them sequentially (to avoid rate limits, though Vercel is fast, GraphQL isn't)
+      
       for (const slug of slugsToFetch) {
         try {
           const cached = await this.repo.findBySlug(slug);
@@ -119,7 +120,7 @@ export class ProblemService {
             await this.getProblemBySlug(slug);
             count++;
             seededSlugs.push(slug);
-            // Throttle slightly
+            
             await new Promise((res) => setTimeout(res, 300));
           } else {
             seededSlugs.push(slug);
@@ -135,7 +136,7 @@ export class ProblemService {
     }
   }
 
-  // ─── Mappers ──────────────────────────────────────────────────────
+  
 
   private mapVercelToProblem(raw: unknown): NexorithmProblem | null {
     if (!raw || typeof raw !== 'object') return null;
@@ -153,11 +154,11 @@ export class ProblemService {
 
     const content = (data['content'] as string) ?? `<p>${title}</p>`;
 
-    // Extract tags
+    
     const topicTags = (data['topicTags'] as Array<{ name: string }>) ?? [];
     const tags = topicTags.map((t) => t.name);
 
-    // Extract starter code from codeSnippets
+    
     const codeSnippets =
       (data['codeSnippets'] as Array<{
         lang: string;
@@ -180,6 +181,8 @@ export class ProblemService {
     const hints = (data['hints'] as string[]) ?? [];
     const sampleTestCase = (data['sampleTestCase'] as string) ?? '';
 
+    const seed = seedProblems.find((p) => p.slug === slug);
+
     const questionId =
       (data['questionFrontendId'] as string) ??
       (data['questionId'] as string) ??
@@ -195,7 +198,7 @@ export class ProblemService {
       content,
       tags,
       starterCode,
-      testCases: [],
+      testCases: seed ? seed.testCases : [],
       sampleInput: sampleTestCase,
       sampleOutput: '',
       hints,
@@ -242,6 +245,7 @@ export class ProblemService {
 
     const hints = (data['hints'] as string[]) ?? [];
     const sampleTestCase = (data['sampleTestCase'] as string) ?? '';
+    const seed = seedProblems.find((p) => p.slug === slug);
     const questionId =
       (data['questionFrontendId'] as string) ??
       (data['questionId'] as string) ??
@@ -255,7 +259,7 @@ export class ProblemService {
       content,
       tags,
       starterCode,
-      testCases: [],
+      testCases: seed ? seed.testCases : [],
       sampleInput: sampleTestCase,
       sampleOutput: '',
       hints,

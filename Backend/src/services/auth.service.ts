@@ -18,7 +18,7 @@ export class AuthService {
     email: string,
     password: string
   ): Promise<AuthResponse> {
-    // Check if user already exists
+    
     const existingUser = await UserModel.findOne({
       $or: [{ email }, { username }],
     });
@@ -33,10 +33,10 @@ export class AuthService {
       throw new ValidationError('Password must be at least 6 characters');
     }
 
-    // Hash password
+    
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user
+    
     const user = await UserModel.create({
       username,
       email,
@@ -44,7 +44,7 @@ export class AuthService {
       role: 'user',
     });
 
-    // Generate JWT
+    
     const token = this.generateToken({
       userId: String(user._id),
       username: user.username,

@@ -24,7 +24,7 @@ export function Workspace({ problem }: Props) {
 
   useKeyboardShortcuts();
 
-  // Load problem — restore draft or use starter code. Only re-run when problem changes.
+  
   useEffect(() => {
     const lang = state.language;
     const starterCode = lang === Language.JAVASCRIPT
@@ -32,10 +32,10 @@ export function Workspace({ problem }: Props) {
       : problem.starterCode.python;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
     dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code: savedDraft ?? starterCode } });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [problem.id]);
 
-  // When language switches, load draft or starter for the new language
+  
   useEffect(() => {
     if (!state.problemId || state.problemId !== problem.id) return;
     const lang = state.language;
@@ -44,17 +44,17 @@ export function Workspace({ problem }: Props) {
       : problem.starterCode.python;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
     dispatch({ type: 'SET_CODE', payload: savedDraft ?? starterCode });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [state.language]);
 
-  // Auto-save draft on code change
+  
   useEffect(() => {
     if (state.problemId && state.code) {
       localStorage.setItem(`nexorithm-draft-${state.problemId}-${state.language}`, state.code);
     }
   }, [state.code, state.problemId, state.language]);
 
-  // Confetti on Accepted — only trigger once per new result
+  
   useEffect(() => {
     if (
       state.lastResult &&
@@ -128,12 +128,12 @@ export function Workspace({ problem }: Props) {
       )}
 
       <div ref={containerRef} style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}>
-        {/* Left Panel — Problem */}
+        {}
         <div style={{ width: `${leftWidth}%`, height: '100%', overflow: 'hidden', borderRight: '1px solid var(--border-primary)' }}>
           <ProblemPanel problem={problem} />
         </div>
 
-        {/* Horizontal Divider */}
+        {}
         <div
           onMouseDown={startDragH}
           style={{ width: '4px', cursor: 'col-resize', background: 'var(--border-primary)', flexShrink: 0, transition: 'background 0.15s' }}
@@ -141,13 +141,13 @@ export function Workspace({ problem }: Props) {
           onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--border-primary)')}
         />
 
-        {/* Right Panel — Editor + Console */}
+        {}
         <div className="workspace-right" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
             <EditorPanel problem={problem} />
           </div>
 
-          {/* Vertical Divider */}
+          {}
           <div
             onMouseDown={startDragV}
             style={{ height: '4px', cursor: 'row-resize', background: 'var(--border-primary)', flexShrink: 0, transition: 'background 0.15s' }}

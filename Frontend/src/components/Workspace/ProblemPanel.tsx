@@ -28,7 +28,7 @@ export function ProblemPanel({ problem }: Props) {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
-      {/* Tab Bar */}
+      {}
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--border-primary)',
         background: 'var(--bg-tertiary)', padding: '0 16px', flexShrink: 0,
@@ -57,7 +57,7 @@ export function ProblemPanel({ problem }: Props) {
         ))}
       </div>
 
-      {/* Tab Content */}
+      {}
       <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
         {activeTab === 'description' && (
           <>

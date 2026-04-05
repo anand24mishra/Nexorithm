@@ -8,6 +8,7 @@ import { NxEditorPanel } from '../components/Workspace/NxEditorPanel';
 import { NxTestPanel } from '../components/Workspace/NxTestPanel';
 import { useSubmission } from '../hooks/useSubmission';
 import { useAuth } from '../context/AuthContext';
+import { Language } from '../types';
 import Confetti from 'react-confetti';
 
 type SideTab = 'problem' | 'submissions' | 'editorial' | 'solutions';
@@ -18,15 +19,28 @@ function WorkspaceShell() {
   const { problem, loading, error } = useProblem(slug ?? '');
   const { problems } = useProblems(1, undefined, undefined, 5000);
   const [sideTab, setSideTab] = useState<SideTab>('problem');
-  const { state } = useWorkspace();
-  const { runCode, isRunning } = useSubmission();
+  const { state, dispatch } = useWorkspace();
+  const { runCode, submitCode, isRunning, isSubmitting } = useSubmission();
   const { isAuthenticated, username, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const prevResult = useRef<string | null>(null);
 
+  
+  useEffect(() => {
+    if (!problem) return;
+    const lang = state.language;
+    const starterCode = lang === Language.PYTHON
+      ? problem.starterCode.python
+      : problem.starterCode.javascript;
+    const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
+    dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code: savedDraft ?? starterCode } });
+  
+  }, [problem?.id]);
+
   useEffect(() => {
     if (
+      state.lastResult?.isSubmit &&
       state.lastResult?.verdict === 'Accepted' &&
       prevResult.current !== JSON.stringify(state.lastResult)
     ) {
@@ -50,10 +64,10 @@ function WorkspaceShell() {
   }, [problem, problems, navigate]);
 
   const sideNav: { id: SideTab; icon: string; label: string }[] = [
-    { id: 'problem',     icon: 'description', label: 'Problem'  },
-    { id: 'submissions', icon: 'history',      label: 'Submits'  },
-    { id: 'editorial',   icon: 'menu_book',    label: 'Editorial'},
-    { id: 'solutions',   icon: 'lightbulb',    label: 'Solutions'},
+    { id: 'problem', icon: 'description', label: 'Problem' },
+    { id: 'submissions', icon: 'history', label: 'Submits' },
+    { id: 'editorial', icon: 'menu_book', label: 'Editorial' },
+    { id: 'solutions', icon: 'lightbulb', label: 'Solutions' },
   ];
 
   return (
@@ -64,7 +78,7 @@ function WorkspaceShell() {
         </div>
       )}
 
-      {/* ── Top Nav Bar ── */}
+      {}
       <header className="flex justify-between items-center w-full px-4 h-12 bg-surface-container-low border-none shadow-none z-50 flex-shrink-0">
         <div className="flex items-center gap-5">
           <button onClick={() => navigate('/')} className="text-lg font-bold text-on-surface tracking-tighter hover:text-primary transition-colors">
@@ -94,17 +108,17 @@ function WorkspaceShell() {
         <div className="flex items-center gap-3">
           <button
             onClick={runCode}
-            disabled={isRunning || !problem}
+            disabled={isRunning || isSubmitting || !problem}
             className="px-4 py-1.5 rounded-lg border border-primary-container text-primary-container font-semibold text-xs hover:bg-primary-container/10 active:scale-95 transition-all disabled:opacity-40"
           >
             {isRunning ? <span className="flex items-center gap-1.5"><span className="spinner" /> Running…</span> : '▶  Run'}
           </button>
           <button
-            onClick={runCode}
-            disabled={isRunning || !problem}
+            onClick={submitCode}
+            disabled={isRunning || isSubmitting || !problem}
             className="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-bold text-xs hover:bg-primary-fixed-dim active:scale-[0.97] transition-all disabled:opacity-40"
           >
-            {isRunning ? <span className="flex items-center gap-1.5"><span className="spinner" /> Submitting…</span> : '✓  Submit'}
+            {isSubmitting ? <span className="flex items-center gap-1.5"><span className="spinner" /> Submitting…</span> : '✓  Submit'}
           </button>
           <div className="flex items-center gap-1 ml-1 relative">
             <button className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all" title="Settings">
@@ -118,7 +132,7 @@ function WorkspaceShell() {
             </button>
             {isAuthenticated ? (
               <div className="relative ml-1">
-                <button 
+                <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold shadow-sm hover:opacity-90 transition-opacity"
                 >
@@ -130,8 +144,8 @@ function WorkspaceShell() {
                       <p className="text-sm font-bold text-on-surface truncate">{username}</p>
                     </div>
                     <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-error hover:bg-surface-container-highest transition-colors flex items-center gap-2">
-                       <span className="material-symbols-outlined text-[16px]">logout</span>
-                       Logout
+                      <span className="material-symbols-outlined text-[16px]">logout</span>
+                      Logout
                     </button>
                   </div>
                 )}
@@ -146,7 +160,7 @@ function WorkspaceShell() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Left Sidebar ── */}
+        {}
         <aside className="flex flex-col items-center py-3 space-y-4 bg-background w-14 flex-shrink-0 border-r border-outline-variant/10">
           <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
             <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>terminal</span>
@@ -162,11 +176,10 @@ function WorkspaceShell() {
                     setSideTab(id);
                   }
                 }}
-                className={`w-full py-3.5 flex flex-col items-center gap-0.5 transition-all group ${
-                  sideTab === id
+                className={`w-full py-3.5 flex flex-col items-center gap-0.5 transition-all group ${sideTab === id
                     ? 'text-primary-container border-r-2 border-primary-container bg-surface-container-low'
                     : 'text-on-surface-variant opacity-50 hover:bg-surface-container-high hover:opacity-100 border-r-2 border-transparent'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: sideTab === id ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
                 <span className="text-[7px] uppercase tracking-tighter font-medium">{label}</span>
@@ -180,9 +193,9 @@ function WorkspaceShell() {
           </div>
         </aside>
 
-        {/* ── 3-Panel Main ── */}
+        {}
         <main className="flex-1 grid grid-cols-12 gap-px bg-surface-container-lowest overflow-hidden">
-          {/* Panel 1: Problem */}
+          {}
           <section className="col-span-4 bg-surface-container-low flex flex-col overflow-hidden">
             {loading && (
               <div className="flex-1 flex items-center justify-center gap-3 text-on-surface-variant">
@@ -201,20 +214,20 @@ function WorkspaceShell() {
             {problem && <NxProblemPanel problem={problem} activeTab={sideTab} />}
           </section>
 
-          {/* Panel 2: Editor */}
+          {}
           <section className="col-span-5 bg-surface-container-high flex flex-col overflow-hidden">
             {problem && <NxEditorPanel problem={problem} />}
           </section>
 
-          {/* Panel 3: Test Cases */}
+          {}
           <section className="col-span-3 bg-surface-container-low flex flex-col overflow-hidden">
             <NxTestPanel />
           </section>
         </main>
       </div>
 
-      {/* Toast on Accepted */}
-      {state.lastResult?.verdict === 'Accepted' && (
+      {}
+      {state.lastResult?.isSubmit && state.lastResult?.verdict === 'Accepted' && (
         <div className="fixed bottom-6 right-6 z-[100] bg-surface-container-highest/90 backdrop-blur-xl border border-outline-variant/20 rounded-xl p-4 shadow-2xl flex items-center gap-4 max-w-xs animate-fade-in">
           <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary flex-shrink-0">
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>

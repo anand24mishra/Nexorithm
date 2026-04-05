@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 import { AuthenticationError } from '../errors/AppError';
 
-// Extend Express Request type
+
 declare global {
   namespace Express {
     interface Request {
@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export function authenticateToken(jwtSecret: string) {
+export function authenticateToken(jwtSecret: string, required: boolean = true) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ')
@@ -20,7 +20,11 @@ export function authenticateToken(jwtSecret: string) {
       : null;
 
     if (!token) {
-      next(new AuthenticationError('No token provided'));
+      if (required) {
+        next(new AuthenticationError('No token provided'));
+      } else {
+        next();
+      }
       return;
     }
 
@@ -29,7 +33,11 @@ export function authenticateToken(jwtSecret: string) {
       req.user = decoded;
       next();
     } catch {
-      next(new AuthenticationError('Invalid or expired token'));
+      if (required) {
+        next(new AuthenticationError('Invalid or expired token'));
+      } else {
+        next();
+      }
     }
   };
 }

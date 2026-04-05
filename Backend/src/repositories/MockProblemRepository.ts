@@ -15,14 +15,14 @@ export class MockProblemRepository implements IProblemRepository {
   ): Promise<{ problems: ProblemListItem[]; total: number }> {
     let filtered = [...this.problems];
 
-    // Filter by difficulty
+    
     if (params.difficulty) {
       filtered = filtered.filter(
         (p) => p.difficulty === params.difficulty
       );
     }
 
-    // Filter by tags
+    
     if (params.tags && params.tags.length > 0) {
       filtered = filtered.filter((p) =>
         params.tags!.some((tag) =>
@@ -31,7 +31,7 @@ export class MockProblemRepository implements IProblemRepository {
       );
     }
 
-    // Search by title
+    
     if (params.search) {
       const searchLower = params.search.toLowerCase();
       filtered = filtered.filter(
@@ -41,7 +41,7 @@ export class MockProblemRepository implements IProblemRepository {
       );
     }
 
-    // Sort by ID ascending numerically
+    
     filtered = filtered.sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
     const total = filtered.length;

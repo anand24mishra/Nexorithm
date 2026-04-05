@@ -23,11 +23,11 @@ export function ProblemList() {
   const { isAuthenticated, username, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Compute stats
+  
   const solvedIds = new Set(submissions.filter(s => s.verdict === 'Accepted').map(s => s.problemId));
   const totalSolved = solvedIds.size;
   
-  // Calculate relative stats of solved out of all (total)
+  
   const percentSolved = total > 0 ? (totalSolved / total) * 100 : 0;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,13 +47,13 @@ export function ProblemList() {
     return 'unsolved';
   };
 
-  // Generate heatmap data (last 35 days)
+  
   const heatmapData = Array.from({ length: 35 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (34 - i));
     const dtString = d.toISOString().split('T')[0];
     
-    // count submissions on this day safely
+    
     const dtSubmissions = submissions.filter(s => {
       if (!s.submittedAt) return false;
       const t = new Date(s.submittedAt);
@@ -71,7 +71,7 @@ export function ProblemList() {
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container flex flex-col">
-      {/* TopNavBar */}
+      {}
       <header className="bg-[#1C1B1B] border-none fixed top-0 w-full z-50">
         <div className="flex justify-between items-center w-full px-6 h-14 max-w-full mx-auto">
           <div className="flex items-center gap-8">
@@ -121,21 +121,21 @@ export function ProblemList() {
         </div>
       </header>
 
-      {/* SideNavBar */}
+      {}
       <aside className="fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-64 bg-[#1C1B1B] flex-col py-4 hidden lg:flex border-none">
         <div className="flex-1 space-y-1">
           <Link to="/" className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#ffa116] bg-[#2A2A2A] rounded-r-lg border-l-4 border-[#ffa116] transition-all duration-150 ease-in-out">
             <span className="material-symbols-outlined">list_alt</span>
             Problem Set
           </Link>
-          <a className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out" href="#">
+          <Link to="/submissions" className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out">
             <span className="material-symbols-outlined">history</span>
             Submissions
-          </a>
-          <a className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out" href="#">
+          </Link>
+          <Link to="/analytics" className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out">
             <span className="material-symbols-outlined">analytics</span>
             Analytics
-          </a>
+          </Link>
           <a className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out" href="#">
             <span className="material-symbols-outlined">star</span>
             Favorites
@@ -153,13 +153,13 @@ export function ProblemList() {
         </div>
       </aside>
 
-      {/* Main Content Canvas */}
+      {}
       <main className="lg:ml-64 pt-14 min-h-screen">
         <div className="max-w-[1400px] mx-auto p-8 flex flex-col xl:flex-row gap-8">
           
-          {/* Problem List Section */}
+          {}
           <div className="flex-1 space-y-6 flex flex-col min-h-0">
-            {/* Filters Header */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-surface-container-low p-4 rounded-lg flex-shrink-0">
               <div className="md:col-span-2 relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm pointer-events-none">search</span>
@@ -200,7 +200,7 @@ export function ProblemList() {
               </div>
             </div>
 
-            {/* Problem Table (Monolith Style) */}
+            {}
             <div className="bg-surface-container-low rounded-lg overflow-hidden flex flex-col flex-1">
               <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse min-w-[600px]">
@@ -261,7 +261,7 @@ export function ProblemList() {
                 </table>
               </div>
 
-              {/* Advanced Pagination UI */}
+              {}
               <div className="mt-auto px-6 py-4 flex items-center justify-between border-t border-outline-variant/10 bg-surface-container-low">
                 <span className="text-[10px] text-on-surface-variant uppercase tracking-widest font-semibold flex-shrink-0">
                   Showing {problems.length} of {total} problems
@@ -276,7 +276,7 @@ export function ProblemList() {
                     >
                       <span className="material-symbols-outlined text-sm">chevron_left</span>
                     </button>
-                    {/* Display max 5 pages dynamically */}
+                    {}
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pgNum = page;
                       if (page <= 3) {
@@ -314,9 +314,9 @@ export function ProblemList() {
             </div>
           </div>
 
-          {/* Right Sidebar */}
+          {}
           <aside className="w-full xl:w-80 space-y-6 flex-shrink-0">
-            {/* User Stats Bento */}
+            {}
             <div className="bg-surface-container-low rounded-lg p-6 space-y-6 border border-outline-variant/10">
               <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">Session Statistics</h3>
               <div className="space-y-4">
@@ -330,7 +330,7 @@ export function ProblemList() {
                   </div>
                 </div>
                 
-                {/* Fixed stats display based on solved, purely cosmetic layout demonstration since exact difficulty totals per user require specific endpoint in reality */}
+                {}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-surface-container-lowest p-3 rounded-lg text-center">
                     <span className="block text-[10px] text-secondary font-bold">EASY</span>
@@ -348,7 +348,7 @@ export function ProblemList() {
               </div>
             </div>
 
-            {/* Monthly Progress Glassmorphism */}
+            {}
             <div className="bg-surface-container-low/40 backdrop-blur-xl border border-outline-variant/10 rounded-lg p-6 relative overflow-hidden group">
               <div className="relative z-10 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">Daily Activity</h3>
@@ -368,7 +368,7 @@ export function ProblemList() {
               </div>
             </div>
 
-            {/* Upgrade Pro CTA */}
+            {}
             <div className="relative rounded-lg overflow-hidden group border border-outline-variant/10">
               <img className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" data-alt="abstract tech circuitry pattern" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxJiuV50OpAMWPZuEnTxsKfSCLEjDtEWoZzQ1T99H8IEt7j09VLA17ZchdphYuXHPsXMCCw1o7-DddfrxkFWHRgrIrbUYAgWE19w53r2bD76M60phzN8Tc889pv1doergV1U64B8NM-1BpUR-WiGChx_LY_NVACYo9ZgCpgcbrG-vw6YInWBLWftp-V8jZpBr5N7_e98xBMuUZ-CmYItg6gqEpI0ugyt-N42y76-7VguOCQZQqldwEnPLozG820hS7a32lyZXFOZkU"/>
               <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent p-6 flex flex-col justify-end">

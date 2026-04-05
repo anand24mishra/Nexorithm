@@ -21,7 +21,7 @@ export class SubmissionService {
     request: SubmissionRequest,
     userId = 'anonymous'
   ): Promise<SubmissionResponse> {
-    // 1. Validate request
+    
     if (!request.code || !request.code.trim()) {
       throw new ValidationError('Code is required');
     }
@@ -39,7 +39,7 @@ export class SubmissionService {
       throw new ValidationError('Problem ID is required');
     }
 
-    // 2. Find problem
+    
     const problem = await this.problemRepo.findById(request.problemId);
     if (!problem) {
       throw new NotFoundError(`Problem with ID "${request.problemId}"`);
@@ -51,14 +51,14 @@ export class SubmissionService {
       );
     }
 
-    // 3. Judge
+    
     const judgeResult = await this.judgeService.judge(
       request.code,
       request.language,
       problem.testCases
     );
 
-    // 4. Persist submission
+    
     await this.submissionRepo.create({
       userId,
       problemId: request.problemId,
@@ -70,7 +70,7 @@ export class SubmissionService {
       executionTimeMs: judgeResult.totalExecutionTimeMs,
     });
 
-    // 5. Build response
+    
     const lastResult = judgeResult.results[judgeResult.results.length - 1];
     return {
       verdict: judgeResult.verdict,
@@ -88,7 +88,7 @@ export class SubmissionService {
   }
 
   async getSubmissionsByUserAndProblem(userId: string, problemId: string): Promise<Submission[]> {
-    // Requires findByUserAndProblem in repo which we added
+    
     return this.submissionRepo.findByUserAndProblem(userId, problemId);
   }
 }

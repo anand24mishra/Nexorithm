@@ -16,6 +16,17 @@ export function useSubmission() {
       dispatch({ type: 'RUN_ERROR', payload: message });
     }
   }, [state.code, state.language, state.problemId, state.isRunning, dispatch]);
+  const submitCode = useCallback(async () => {
+    if (state.isRunning || state.isSubmitting || !state.problemId) return;
+    dispatch({ type: 'SUBMIT_START' });
+    try {
+      const result = await submissionApi.submit(state.code, state.language, state.problemId);
+      dispatch({ type: 'SUBMIT_SUCCESS', payload: result });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Submission failed';
+      dispatch({ type: 'SUBMIT_ERROR', payload: message });
+    }
+  }, [state.code, state.language, state.problemId, state.isRunning, state.isSubmitting, dispatch]);
 
-  return { runCode, isRunning: state.isRunning };
+  return { runCode, submitCode, isRunning: state.isRunning, isSubmitting: state.isSubmitting };
 }

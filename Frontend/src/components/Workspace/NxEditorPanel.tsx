@@ -52,7 +52,7 @@ export function NxEditorPanel({ problem }: Props) {
       id: 'nx-run',
       label: 'Run / Submit',
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-      run: () => { /* handled at page level */ },
+      run: () => {  },
     });
   };
 
@@ -69,9 +69,9 @@ export function NxEditorPanel({ problem }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Editor Toolbar */}
+      {}
       <div className="h-10 px-3 flex items-center justify-between border-b border-outline-variant/10 bg-surface flex-shrink-0">
-        {/* Language selector */}
+        {}
         <div className="relative">
           <button
             onClick={() => setShowLangPicker((v) => !v)}
@@ -103,7 +103,7 @@ export function NxEditorPanel({ problem }: Props) {
           )}
         </div>
 
-        {/* Right controls */}
+        {}
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-on-surface-variant/40 font-mono hidden sm:block">Auto-save: ON</span>
           <div className="flex items-center gap-1">
@@ -130,7 +130,7 @@ export function NxEditorPanel({ problem }: Props) {
         </div>
       </div>
 
-      {/* Monaco Editor */}
+      {}
       <div className="flex-1 overflow-hidden">
         <Editor
           language={state.language === Language.PYTHON ? 'python' : 'javascript'}
@@ -163,7 +163,7 @@ export function NxEditorPanel({ problem }: Props) {
         />
       </div>
 
-      {/* Status Bar */}
+      {}
       <div className="h-8 px-4 flex items-center justify-between bg-surface border-t border-outline-variant/10 flex-shrink-0">
         <div className="flex items-center gap-4 text-[10px] text-on-surface-variant/50 font-mono">
           <span>{currentLang?.label}</span>

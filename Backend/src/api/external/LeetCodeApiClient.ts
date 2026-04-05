@@ -5,7 +5,7 @@ const VERCEL_BASE_URL = 'https://leetcode-api-pied.vercel.app';
 const LEETCODE_GRAPHQL_URL = 'https://leetcode.com/graphql';
 
 export class LeetCodeApiClient implements IExternalProblemApi {
-  // ─── Tier 1: Vercel Proxy API ──────────────────────────────────────
+  
 
   async fetchFromVercel(slug: string): Promise<unknown> {
     const res = await fetch(`${VERCEL_BASE_URL}/problem/${slug}`);
@@ -42,7 +42,7 @@ export class LeetCodeApiClient implements IExternalProblemApi {
     return res.json();
   }
 
-  // ─── Tier 2: LeetCode GraphQL Direct ──────────────────────────────
+  
 
   async fetchFromGraphQL(slug: string): Promise<unknown> {
     const query = `

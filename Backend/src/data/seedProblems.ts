@@ -158,7 +158,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given the <code>root</code> of a binary tree, return the <em>inorder traversal</em> of its nodes\' values.</p><h3>Example 1:</h3><pre>Input: root = [1,null,2,3]\nOutput: [1,3,2]</pre>',
     tags: ['Tree', 'Depth-First Search', 'Binary Tree'],
     starterCode: {
-      javascript: '/**\n * @param {TreeNode} root\n * @return {number[]}\n */\nvar inorderTraversal = function(root) {\n    \n};',
+      javascript: '\nvar inorderTraversal = function(root) {\n    \n};',
       python: 'class Solution:\n    def inorderTraversal(self, root):\n        ',
     },
     testCases: [
@@ -179,7 +179,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>You are given an array <code>prices</code> where <code>prices[i]</code> is the price of a given stock on the <code>ith</code> day. You want to maximize your profit by choosing a <strong>single day</strong> to buy and a <strong>different day in the future</strong> to sell.</p><h3>Example 1:</h3><pre>Input: prices = [7,1,5,3,6,4]\nOutput: 5</pre>',
     tags: ['Array', 'Dynamic Programming'],
     starterCode: {
-      javascript: '/**\n * @param {number[]} prices\n * @return {number}\n */\nvar maxProfit = function(prices) {\n    \n};',
+      javascript: '\nvar maxProfit = function(prices) {\n    \n};',
       python: 'class Solution:\n    def maxProfit(self, prices: list[int]) -> int:\n        ',
     },
     testCases: [
@@ -199,7 +199,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given an <code>m x n</code> 2D binary grid <code>grid</code> which represents a map of \'1\'s (land) and \'0\'s (water), return <em>the number of islands</em>.</p><h3>Example 1:</h3><pre>Input: grid = [\n  ["1","1","1","1","0"],\n  ["1","1","0","1","0"],\n  ["1","1","0","0","0"],\n  ["0","0","0","0","0"]\n]\nOutput: 1</pre>',
     tags: ['Array', 'BFS', 'DFS', 'Matrix', 'Union Find'],
     starterCode: {
-      javascript: '/**\n * @param {character[][]} grid\n * @return {number}\n */\nvar numIslands = function(grid) {\n    \n};',
+      javascript: '\nvar numIslands = function(grid) {\n    \n};',
       python: 'class Solution:\n    def numIslands(self, grid: list[list[str]]) -> int:\n        ',
     },
     testCases: [
@@ -219,7 +219,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given the <code>head</code> of a singly linked list, reverse the list, and return <em>the reversed list</em>.</p><h3>Example 1:</h3><pre>Input: head = [1,2,3,4,5]\nOutput: [5,4,3,2,1]</pre>',
     tags: ['Linked List', 'Recursion'],
     starterCode: {
-      javascript: '/**\n * @param {ListNode} head\n * @return {ListNode}\n */\nvar reverseList = function(head) {\n    \n};',
+      javascript: '\nvar reverseList = function(head) {\n    \n};',
       python: 'class Solution:\n    def reverseList(self, head):\n        ',
     },
     testCases: [
@@ -240,7 +240,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given the <code>root</code> of a binary tree, invert the tree, and return <em>its root</em>.</p><h3>Example 1:</h3><pre>Input: root = [4,2,7,1,3,6,9]\nOutput: [4,7,2,9,6,3,1]</pre>',
     tags: ['Tree', 'BFS', 'DFS', 'Binary Tree'],
     starterCode: {
-      javascript: '/**\n * @param {TreeNode} root\n * @return {TreeNode}\n */\nvar invertTree = function(root) {\n    \n};',
+      javascript: '\nvar invertTree = function(root) {\n    \n};',
       python: 'class Solution:\n    def invertTree(self, root):\n        ',
     },
     testCases: [
@@ -261,7 +261,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given an integer array <code>nums</code>, return an array <code>answer</code> such that <code>answer[i]</code> is equal to the product of all the elements of <code>nums</code> except <code>nums[i]</code>.</p><h3>Example 1:</h3><pre>Input: nums = [1,2,3,4]\nOutput: [24,12,8,6]</pre>',
     tags: ['Array', 'Prefix Sum'],
     starterCode: {
-      javascript: '/**\n * @param {number[]} nums\n * @return {number[]}\n */\nvar productExceptSelf = function(nums) {\n    \n};',
+      javascript: '\nvar productExceptSelf = function(nums) {\n    \n};',
       python: 'class Solution:\n    def productExceptSelf(self, nums: list[int]) -> list[int]:\n        ',
     },
     testCases: [
@@ -281,7 +281,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given two strings <code>s</code> and <code>t</code>, return <code>true</code> if <code>t</code> is an anagram of <code>s</code>, and <code>false</code> otherwise.</p><h3>Example 1:</h3><pre>Input: s = "anagram", t = "nagaram"\nOutput: true</pre>',
     tags: ['String', 'Hash Table', 'Sorting'],
     starterCode: {
-      javascript: '/**\n * @param {string} s\n * @param {string} t\n * @return {boolean}\n */\nvar isAnagram = function(s, t) {\n    \n};',
+      javascript: '\nvar isAnagram = function(s, t) {\n    \n};',
       python: 'class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        ',
     },
     testCases: [
@@ -302,7 +302,7 @@ export const seedProblems: NexorithmProblem[] = [
     content: '<p>Given an array <code>nums</code> containing <code>n</code> distinct numbers in the range <code>[0, n]</code>, return <em>the only number in the range that is missing from the array</em>.</p><h3>Example 1:</h3><pre>Input: nums = [3,0,1]\nOutput: 2</pre>',
     tags: ['Array', 'Math', 'Bit Manipulation'],
     starterCode: {
-      javascript: '/**\n * @param {number[]} nums\n * @return {number}\n */\nvar missingNumber = function(nums) {\n    \n};',
+      javascript: '\nvar missingNumber = function(nums) {\n    \n};',
       python: 'class Solution:\n    def missingNumber(self, nums: list[int]) -> int:\n        ',
     },
     testCases: [

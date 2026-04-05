@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Initial load: parse the token lightly if possible or just rely on existence
+    
     const token = getAuthToken();
     if (token) {
       try {
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username: payload.username || 'User',
         });
       } catch {
-        // invalid token
+        
         removeAuthToken();
       }
     }

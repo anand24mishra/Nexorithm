@@ -12,7 +12,7 @@ export function removeAuthToken(): void {
   localStorage.removeItem('nx_token');
 }
 
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(url: string, options: RequestInit = {}, skipAuthRedirect = false): Promise<Response> {
   const token = getAuthToken();
   const headers = new Headers(options.headers || {});
   
@@ -29,9 +29,8 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     headers,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && !skipAuthRedirect) {
     removeAuthToken();
-    // Options: Dispatch custom event or redirect to login
     window.dispatchEvent(new Event('auth_unauthorized'));
   }
 

@@ -23,7 +23,7 @@ export class SubmissionController {
         problemId: problemId ?? '',
       };
 
-      // Extract userId from auth (if available, otherwise anonymous)
+      
       const userId =
         (req as Request & { user?: { userId: string } }).user?.userId ??
         'anonymous';

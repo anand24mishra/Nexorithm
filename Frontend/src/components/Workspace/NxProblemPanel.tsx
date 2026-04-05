@@ -29,20 +29,20 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Panel Header */}
+      {}
       <div className="h-10 px-4 flex items-center border-b border-outline-variant/10 bg-surface flex-shrink-0">
         <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface">
           {isSubmissions ? 'Submissions' : 'Description'}
         </span>
       </div>
 
-      {/* Content */}
+      {}
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
-        {/* ── Description Tab ── */}
+        {}
         {!isSubmissions && (
           <>
-            {/* Title + difficulty */}
+            {}
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <h1 className="text-xl font-bold text-on-surface leading-tight">
@@ -53,7 +53,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
                 </span>
               </div>
 
-              {/* Tags */}
+              {}
               {problem.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {problem.tags.map((tag) => (
@@ -65,13 +65,13 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
               )}
             </div>
 
-            {/* Problem Content */}
+            {}
             <div
               className="problem-content"
               dangerouslySetInnerHTML={{ __html: sanitized }}
             />
 
-            {/* Acceptance Rate */}
+            {}
             {problem.acRate > 0 && (
               <div className="text-[11px] text-on-surface-variant/60 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px]">check_circle</span>
@@ -79,7 +79,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
               </div>
             )}
 
-            {/* Hints */}
+            {}
             {problem.hints.length > 0 && (
               <div className="border border-outline-variant/20 rounded-lg overflow-hidden">
                 <button
@@ -109,7 +109,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
           </>
         )}
 
-        {/* ── Submissions Tab ── */}
+        {}
         {isSubmissions && (
           <div>
             <p className="text-xs text-on-surface-variant/60 mb-4">

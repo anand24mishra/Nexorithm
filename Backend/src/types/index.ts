@@ -1,4 +1,4 @@
-// ─── Enums ─────────────────────────────────────────────────────────────────────
+
 
 export enum Language {
   JAVASCRIPT = 'javascript',
@@ -19,7 +19,7 @@ export enum Difficulty {
   HARD = 'hard',
 }
 
-// ─── Execution ─────────────────────────────────────────────────────────────────
+
 
 export interface ExecutionResult {
   stdout: string;
@@ -46,7 +46,7 @@ export interface JudgeResult {
   totalExecutionTimeMs: number;
 }
 
-// ─── Problem ───────────────────────────────────────────────────────────────────
+
 
 export interface TestCase {
   input: string;
@@ -98,7 +98,7 @@ export interface ProblemListResponse {
   totalPages: number;
 }
 
-// ─── Submission ────────────────────────────────────────────────────────────────
+
 
 export interface SubmissionRequest {
   code: string;
@@ -129,7 +129,7 @@ export interface Submission {
   submittedAt: Date;
 }
 
-// ─── Auth ──────────────────────────────────────────────────────────────────────
+
 
 export interface RegisterRequest {
   username: string;
@@ -157,7 +157,7 @@ export interface JwtPayload {
   role: 'user' | 'admin';
 }
 
-// ─── Config ────────────────────────────────────────────────────────────────────
+
 
 export interface AppConfig {
   port: number;

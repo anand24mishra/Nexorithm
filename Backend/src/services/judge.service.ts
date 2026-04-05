@@ -42,7 +42,7 @@ export class JudgeService {
 
       results.push(testCaseResult);
 
-      // Determine verdict based on first failure
+      
       if (!passed && finalVerdict === Verdict.ACCEPTED) {
         if (execResult.timedOut) {
           finalVerdict = Verdict.TIME_LIMIT_EXCEEDED;
@@ -53,7 +53,7 @@ export class JudgeService {
         }
       }
 
-      // Stop on TLE or Runtime Error
+      
       if (execResult.timedOut || (execResult.exitCode !== 0 && !passed)) {
         break;
       }

@@ -44,7 +44,7 @@ export class ProblemController {
         return;
       }
 
-      // Filter out hidden test cases for the response
+      
       const visibleProblem = {
         ...problem,
         testCases: problem.testCases.filter((tc) => !tc.isHidden),

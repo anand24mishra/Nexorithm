@@ -18,7 +18,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const res = await authApi.login(email, password);
-      // res contains { token, user: { username } }
+      
       login(res.token, res.user.username);
       navigate('/');
     } catch (err: any) {

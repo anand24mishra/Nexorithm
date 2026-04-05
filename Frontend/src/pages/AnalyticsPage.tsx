@@ -48,12 +48,12 @@ export function AnalyticsPage() {
   const acceptedSubs = submissions.filter(s => s.verdict === 'Accepted');
   const successRate = submissions.length > 0 ? Math.round((acceptedSubs.length / submissions.length) * 100) : 0;
   
-  // For bar chart representation (simulated based on recent tries)
+  
   const recentActivity = submissions.slice(0, 10).reverse();
   const bars: string[] = recentActivity.map(s => {
     return s.verdict === 'Accepted' ? 'bg-primary-container h-[80%]' : 'bg-surface-container-highest h-[40%]';
   });
-  // fill the rest with blank if < 10
+  
   while (bars.length < 10) {
     bars.unshift('bg-surface-container-highest h-[10%]');
   }
@@ -63,7 +63,7 @@ export function AnalyticsPage() {
 
   return (
     <div className="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container font-body min-h-screen flex flex-col">
-      {/* TopNavBar */}
+      {}
       <nav className="bg-[#1C1B1B] text-[#ffa116] font-['Inter'] font-medium text-sm tracking-tight border-none shadow-none flex justify-between items-center w-full px-6 h-14 max-w-full mx-auto fixed top-0 z-50">
         <div className="flex items-center gap-8">
           <Link to="/" className="text-xl font-black text-[#E5E2E1] tracking-tighter hover:text-primary transition-colors">Nexorithm</Link>
@@ -86,7 +86,7 @@ export function AnalyticsPage() {
         </div>
       </nav>
 
-      {/* SideNavBar */}
+      {}
       <aside className="fixed left-0 top-14 h-[calc(100vh-3.5rem)] flex flex-col py-4 bg-[#1C1B1B] w-64 border-none transition-all duration-150 ease-in-out">
         <div className="px-6 mb-8 flex items-center gap-3">
           <div className="w-8 h-8 bg-surface-container-highest rounded flex items-center justify-center">
@@ -127,11 +127,11 @@ export function AnalyticsPage() {
         </div>
       </aside>
 
-      {/* Main Workspace */}
+      {}
       <main className="ml-64 mt-14 p-6 min-h-[calc(100vh-3.5rem)] flex flex-col gap-6">
-        {/* Header & Summary Section (Bento Style) */}
+        {}
         <div className="grid grid-cols-12 gap-4">
-          {/* Problem Title Header */}
+          {}
           <div className="col-span-12 lg:col-span-8 bg-surface-container-low p-6 rounded-lg flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -152,7 +152,7 @@ export function AnalyticsPage() {
             </div>
           </div>
           
-          {/* Stats Summary */}
+          {}
           <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
             <div className="bg-surface-container-low p-4 rounded-lg flex flex-col justify-center items-center text-center">
               <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Total Attempts</span>
@@ -173,7 +173,7 @@ export function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Submissions Table Area */}
+        {}
         <div className="bg-surface-container-low rounded-lg overflow-hidden flex flex-col flex-1">
           <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
             <h3 className="font-bold text-xs uppercase tracking-widest text-on-surface-variant">Submission Records</h3>
@@ -187,7 +187,7 @@ export function AnalyticsPage() {
             </div>
           </div>
           
-          {/* Table */}
+          {}
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
@@ -235,7 +235,7 @@ export function AnalyticsPage() {
             </table>
           </div>
           
-          {/* Table Footer / Pagination */}
+          {}
           <div className="mt-auto px-6 py-4 border-t border-outline-variant/10 flex items-center justify-between">
             <span className="text-[10px] text-on-surface-variant uppercase tracking-widest font-semibold">
               Showing {currentSubmissions.length} of {submissions.length} submissions

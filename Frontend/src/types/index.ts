@@ -1,4 +1,4 @@
-// ─── Enums ─────────────────────────────────────────────────────
+
 
 export enum Language {
   JAVASCRIPT = 'javascript',
@@ -19,7 +19,7 @@ export enum Difficulty {
   HARD = 'hard',
 }
 
-// ─── Problem ───────────────────────────────────────────────────
+
 
 export interface TestCase {
   input: string;
@@ -63,7 +63,7 @@ export interface ProblemListResponse {
   totalPages: number;
 }
 
-// ─── Submission ────────────────────────────────────────────────
+
 
 export interface TestCaseResult {
   input: string;
@@ -82,9 +82,10 @@ export interface SubmissionResult {
   stderr: string;
   executionTimeMs: number;
   results: TestCaseResult[];
+  isSubmit?: boolean;
 }
 
-// ─── Workspace State ──────────────────────────────────────────
+
 
 export interface WorkspaceState {
   code: string;
@@ -106,6 +107,9 @@ export type WorkspaceAction =
   | { type: 'RUN_START' }
   | { type: 'RUN_SUCCESS'; payload: SubmissionResult }
   | { type: 'RUN_ERROR'; payload: string }
+  | { type: 'SUBMIT_START' }
+  | { type: 'SUBMIT_SUCCESS'; payload: SubmissionResult }
+  | { type: 'SUBMIT_ERROR'; payload: string }
   | { type: 'SET_ACTIVE_TAB'; payload: 'testcase' | 'result' }
   | { type: 'SET_FONT_SIZE'; payload: number }
   | { type: 'TOGGLE_FULLSCREEN' }

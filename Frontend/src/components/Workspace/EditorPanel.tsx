@@ -58,7 +58,7 @@ export function EditorPanel({ problem }: Props) {
     const starterCode = state.language === Language.JAVASCRIPT
       ? problem.starterCode.javascript
       : problem.starterCode.python;
-    // Clear draft from localStorage
+    
     localStorage.removeItem(`nexorithm-draft-${problem.id}-${state.language}`);
     dispatch({ type: 'RESET_CODE', payload: starterCode });
     setShowResetModal(false);
@@ -68,7 +68,7 @@ export function EditorPanel({ problem }: Props) {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' }}>
-      {/* Toolbar */}
+      {}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '6px 12px', borderBottom: '1px solid var(--border-primary)',
@@ -112,7 +112,7 @@ export function EditorPanel({ problem }: Props) {
         </div>
       </div>
 
-      {/* Monaco Editor */}
+      {}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <Editor
           language={monacoLanguage}
@@ -142,7 +142,7 @@ export function EditorPanel({ problem }: Props) {
         />
       </div>
 
-      {/* Bottom Action Bar */}
+      {}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '8px 12px', borderTop: '1px solid var(--border-primary)',

@@ -6,7 +6,7 @@ export function ConsolePanel() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
-      {/* Tabs */}
+      {}
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--border-primary)',
         background: 'var(--bg-tertiary)', minHeight: '36px',
@@ -35,7 +35,7 @@ export function ConsolePanel() {
         </button>
       </div>
 
-      {/* Content */}
+      {}
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
         {state.activeTab === 'result' ? (
           <ResultView />

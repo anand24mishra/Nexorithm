@@ -6,7 +6,7 @@ import { IExecutor } from '../interfaces/IExecutor';
 import { ExecutionResult, Language } from '../types';
 import { AppError } from '../errors/AppError';
 
-// ─── Base Executor (Template Method Pattern) ────────────────────────────────
+
 
 abstract class BaseExecutor implements IExecutor {
   async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
@@ -70,7 +70,7 @@ abstract class BaseExecutor implements IExecutor {
           fs.unlinkSync(filePath);
         }
       } catch {
-        // Cleanup failure is non-critical
+        
       }
     }
   }
@@ -79,7 +79,7 @@ abstract class BaseExecutor implements IExecutor {
   protected abstract getFileExtension(): string;
 }
 
-// ─── Concrete Executors (Strategy Pattern) ──────────────────────────────────
+
 
 export class JavascriptExecutor extends BaseExecutor {
   protected getCommand(filePath: string): string {
@@ -181,7 +181,7 @@ if __name__ == '__main__':
   }
 }
 
-// ─── Factory (Factory + Strategy combined) ──────────────────────────────────
+
 
 export class ExecutorFactory {
   private static readonly executors: Map<Language, IExecutor> = new Map<Language, IExecutor>([

@@ -13,12 +13,12 @@ export function NxTestPanel() {
   const [caseTab, setCaseTab] = useState<CaseTab>('case1');
   const [consoleOpen, setConsoleOpen] = useState(true);
 
-  // Sync to result tab after run
+  
   const activeConsoleTab = state.lastResult ? 'result' : consoleTab;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header Tabs */}
+      {}
       <div className="h-10 px-4 flex items-center justify-between border-b border-outline-variant/10 bg-surface flex-shrink-0">
         <div className="flex items-center gap-4">
           {(['testcase', 'result'] as ConsoleTab[]).map((tab) => (
@@ -44,13 +44,13 @@ export function NxTestPanel() {
         </div>
       </div>
 
-      {/* Content */}
+      {}
       <div className="flex-1 overflow-hidden flex flex-col">
 
-        {/* ── Test Case Tab ── */}
+        {}
         {activeConsoleTab === 'testcase' && (
           <div className="flex-1 overflow-y-auto">
-            {/* Case sub-tabs */}
+            {}
             <div className="flex items-center gap-2 px-4 pt-4 pb-2">
               {CASE_LABELS.map((c, i) => (
                 <button
@@ -87,24 +87,24 @@ export function NxTestPanel() {
           </div>
         )}
 
-        {/* ── Result Tab ── */}
+        {}
         {activeConsoleTab === 'result' && (
           <div className="flex-1 overflow-y-auto">
-            {state.isRunning && (
+            {(state.isRunning || state.isSubmitting) && (
               <div className="flex items-center gap-3 p-6 text-on-surface-variant text-sm">
                 <span className="spinner" />
-                Running your code…
+                {state.isSubmitting ? 'Submitting your code…' : 'Running your code…'}
               </div>
             )}
-            {!state.isRunning && !state.lastResult && (
+            {!state.isRunning && !state.isSubmitting && !state.lastResult && (
               <div className="p-6 text-on-surface-variant/50 text-sm text-center">
                 <div className="text-3xl mb-3">🖥️</div>
                 Run your code to see results here.
               </div>
             )}
-            {!state.isRunning && state.lastResult && (
+            {!state.isRunning && !state.isSubmitting && state.lastResult && (
               <div className="p-4 space-y-4">
-                {/* Verdict summary */}
+                {}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span
@@ -117,7 +117,7 @@ export function NxTestPanel() {
                   </span>
                 </div>
 
-                {/* Stats grid */}
+                {}
                 {state.lastResult.verdict === 'Accepted' && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
@@ -131,7 +131,7 @@ export function NxTestPanel() {
                   </div>
                 )}
 
-                {/* Per-test results */}
+                {}
                 <div className="space-y-2">
                   {state.lastResult.results.map((tc, i) => (
                     <div
@@ -163,7 +163,7 @@ export function NxTestPanel() {
                   ))}
                 </div>
 
-                {/* Output */}
+                {}
                 {state.lastResult.stdout && (
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Output</label>
@@ -178,7 +178,7 @@ export function NxTestPanel() {
         )}
       </div>
 
-      {/* Console Footer */}
+      {}
       <div className="h-10 px-4 flex items-center justify-between border-t border-outline-variant/10 bg-surface flex-shrink-0">
         <button
           onClick={() => setConsoleOpen((v) => !v)}
