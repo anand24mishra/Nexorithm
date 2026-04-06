@@ -36,16 +36,16 @@ async function bootstrap(): Promise<void> {
   const config = loadConfig();
   const app = express();
 
-  
+
   app.use(cors());
   app.use(express.json({ limit: '5mb' }));
 
-  
+
   if (config.useDb && config.mongodbUri) {
     await connectDatabase(config.mongodbUri);
   }
 
-  
+
   const problemRepo =
     config.useDb && config.mongodbUri
       ? new MongoProblemRepository()
@@ -69,7 +69,7 @@ async function bootstrap(): Promise<void> {
   const problemController = new ProblemController(problemService);
   const submissionController = new SubmissionController(submissionService);
 
-  
+
   app.get('/api/health', (_req, res) => {
     res.status(200).json({
       status: 'ok',
@@ -84,11 +84,26 @@ async function bootstrap(): Promise<void> {
     createSubmissionRoutes(submissionController, authenticateToken(config.jwtSecret, false))
   );
   app.use('/api/auth', createAuthRoutes(authService));
+  console.log("Auth routes created")
+  console.log("Auth routes created")
+  console.log("Auth routes created")
+  console.log("Auth routes created")
+  console.log("Auth routes created")
+  console.log("Auth routes created")
+  console.log("Auth routes created")
 
-  
+
+
+
+
+
+
+
+
+
   app.use(globalErrorHandler);
 
-  
+
   app.listen(config.port, () => {
     console.log(
       `Nexorithm Backend running on http://localhost:${config.port}`
