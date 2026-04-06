@@ -52,5 +52,28 @@ export function createAuthRoutes(authService: AuthService): Router {
     }
   );
 
+  router.post(
+    '/auth0-login',
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { email, name, auth0Id } = req.body as {
+          email?: string;
+          name?: string;
+          auth0Id?: string;
+        };
+
+        if (!email || !auth0Id) {
+          res.status(400).json({ error: 'email and auth0Id are required' });
+          return;
+        }
+
+        const result = await authService.auth0Login(email, name || '', auth0Id);
+        res.status(200).json(result);
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
   return router;
 }

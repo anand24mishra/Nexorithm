@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/authApi';
-
+import {useAuth0} from "@auth0/auth0-react";
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login  } = useAuth();
   const navigate = useNavigate();
-
+  const { loginWithRedirect } = useAuth0();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -69,6 +69,13 @@ export function LoginPage() {
             className="mt-4 w-full py-3.5 rounded-xl bg-primary-container text-on-primary-container font-extrabold tracking-wide hover:bg-primary-fixed-dim transition-all active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+          <button 
+            type="button" 
+            onClick={() => loginWithRedirect()}
+            className="mt-2 w-full py-3.5 rounded-xl bg-secondary-container text-on-secondary-container font-extrabold tracking-wide hover:bg-secondary-fixed-dim transition-all active:scale-[0.98]"
+          >
+            Log in with Auth0
           </button>
         </form>
         
