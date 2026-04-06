@@ -15,8 +15,8 @@ export function globalErrorHandler(
     return;
   }
 
-  
-  console.error('Unhandled error:', err);
+
+  console.error('Unhandled response:', err);
   res.status(500).json({
     error: 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && {
