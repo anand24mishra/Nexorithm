@@ -4,10 +4,13 @@ const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
-      minlength: 3,
+    },
+    name: {
+      type: String,
+      trim: true,
     },
     email: {
       type: String,
@@ -18,7 +21,16 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
+    },
+    auth0Id: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    provider: {
+      type: String,
+      enum: ['local', 'auth0'],
+      default: 'local',
     },
     role: {
       type: String,

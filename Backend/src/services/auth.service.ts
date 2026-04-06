@@ -47,7 +47,7 @@ export class AuthService {
     
     const token = this.generateToken({
       userId: String(user._id),
-      username: user.username,
+      username: user.username || user.name || 'anonymous',
       role: user.role as 'user' | 'admin',
     });
 
@@ -55,7 +55,7 @@ export class AuthService {
       token,
       user: {
         id: String(user._id),
-        username: user.username,
+        username: user.username || user.name || 'anonymous',
         email: user.email,
       },
     };
@@ -63,7 +63,7 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<AuthResponse> {
     const user = await UserModel.findOne({ email });
-    if (!user) {
+    if (!user || !user.passwordHash) {
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -74,7 +74,7 @@ export class AuthService {
 
     const token = this.generateToken({
       userId: String(user._id),
-      username: user.username,
+      username: user.username || user.name || 'anonymous',
       role: user.role as 'user' | 'admin',
     });
 
@@ -82,7 +82,39 @@ export class AuthService {
       token,
       user: {
         id: String(user._id),
-        username: user.username,
+        username: user.username || user.name || 'anonymous',
+        email: user.email,
+      },
+    };
+  }
+
+  async auth0Login(email: string, name: string, auth0Id: string): Promise<AuthResponse> {
+    let user = await UserModel.findOne({ email });
+
+    if (!user) {
+      const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      const uniqueSuffix = Math.floor(Math.random() * 100000);
+      user = await UserModel.create({
+        username: `${baseUsername}_${uniqueSuffix}`,
+        email,
+        name,
+        auth0Id,
+        provider: 'auth0',
+        role: 'user',
+      });
+    }
+
+    const token = this.generateToken({
+      userId: String(user._id),
+      username: user.name || 'anonymous',
+      role: user.role as 'user' | 'admin',
+    });
+
+    return {
+      token,
+      user: {
+        id: String(user._id),
+        username: user.name || 'anonymous',
         email: user.email,
       },
     };

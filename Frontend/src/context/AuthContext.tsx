@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAuthToken, setAuthToken as setTokenStorage, removeAuthToken } from '../api/authApi';
+import { getAuthToken, setAuthToken as setTokenStorage, removeAuthToken, authApi } from '../api/authApi';
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface AuthState {
   token: string | null;
@@ -20,6 +21,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     username: null,
   });
+
+  const { isAuthenticated: isAuth0Authenticated, user: auth0User, isLoading: isAuth0Loading, logout: auth0Logout } = useAuth0();
+
+  useEffect(() => {
+    const syncAuth0 = async () => {
+      // If Auth0 is authenticated but our local backend auth is NOT yet authenticated, we trigger backend login!
+      if (!isAuth0Loading && isAuth0Authenticated && auth0User && auth0User.email && !authState.isAuthenticated) {
+        try {
+          const res = await authApi.auth0Login(
+            auth0User.email,
+            auth0User.name || '',
+            auth0User.sub || ''
+          );
+          setTokenStorage(res.token);
+          setAuthState({ token: res.token, isAuthenticated: true, username: res.user.username });
+        } catch (err) {
+          console.error('Failed to sync Auth0 login with backend:', err);
+        }
+      }
+    };
+    syncAuth0();
+  }, [isAuth0Authenticated, auth0User, authState.isAuthenticated, isAuth0Loading, auth0Logout]);
 
   useEffect(() => {
     
@@ -54,6 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     removeAuthToken();
     setAuthState({ token: null, isAuthenticated: false, username: null });
+    if (isAuth0Authenticated) {
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    }
   };
 
   return (

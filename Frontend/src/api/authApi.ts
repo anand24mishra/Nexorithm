@@ -58,5 +58,16 @@ export const authApi = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
     return data;
+  },
+
+  async auth0Login(email: string, name: string, auth0Id: string) {
+    const res = await fetch(`${API_BASE}/auth/auth0-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, auth0Id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Auth0 Login failed');
+    return data;
   }
 };

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useProblems } from '../../hooks/useProblems';
 import { useSubmissionHistory } from '../../hooks/useSubmissionHistory';
 import { useAuth } from '../../context/AuthContext';
-
+import { useAuth0 } from "@auth0/auth0-react";
 const diffConfig: Record<string, { cls: string; label: string; iconBg: string }> = {
   easy:   { cls: 'bg-on-secondary text-secondary', label: 'Easy', iconBg: 'bg-secondary' },
   medium: { cls: 'bg-on-primary text-primary', label: 'Medium', iconBg: 'bg-primary' },
@@ -23,7 +23,7 @@ export function ProblemList() {
   const { isAuthenticated, username, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  
+  const {isAuthenticated: isAuth0Authenticated, user: auth0User } = useAuth0();
   const solvedIds = new Set(submissions.filter(s => s.verdict === 'Accepted').map(s => s.problemId));
   const totalSolved = solvedIds.size;
   
@@ -91,7 +91,7 @@ export function ProblemList() {
             <button className="text-[#D9C3AD] hover:bg-[#2A2A2A] p-2 rounded-lg transition-colors duration-200">
               <span className="material-symbols-outlined icon-settings">settings</span>
             </button>
-            {isAuthenticated ? (
+            {isAuthenticated || isAuth0Authenticated? (
               <div className="relative">
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -102,7 +102,7 @@ export function ProblemList() {
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-surface-container-high rounded-xl border border-outline-variant/20 shadow-xl py-1 z-50">
                     <div className="px-4 py-2 border-b border-outline-variant/10">
-                      <p className="text-sm font-bold text-on-surface truncate">{username}</p>
+                      <p className="text-sm font-bold text-on-surface truncate">{username || auth0User?.name}</p>
                     </div>
                     <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-error hover:bg-surface-container-highest transition-colors flex items-center gap-2">
                        <span className="material-symbols-outlined text-[16px]">logout</span>
