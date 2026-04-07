@@ -13,6 +13,7 @@ export function loadConfig(): AppConfig {
     port: Number(getEnv('PORT', '8000')),
     mongodbUri: getEnv('MONGODB_URI', ''),
     jwtSecret: getEnv('JWT_SECRET', 'nexorithm-dev-secret-change-in-production'),
+    googleClientId: getEnv('GOOGLE_CLIENT_ID', ''),
     useDb: getEnv('USE_DB', 'false') === 'true',
     nodeEnv: getEnv('NODE_ENV', 'development'),
   };

@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/authApi';
-import {useAuth0} from "@auth0/auth0-react";
+
+// Google Client ID — same as LoginPage
+const GOOGLE_CLIENT_ID = '286013082590-f59ehv4o7njfs816kvkb4jip2fvdtjtb.apps.googleusercontent.com';
+
 export function SignupPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -10,9 +13,58 @@ export function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
-  const { loginWithRedirect } = useAuth0();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Google Identity Services and render the standard Google button
+  useEffect(() => {
+    const initGoogleSignIn = () => {
+      if (window.google && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback,
+        });
+        // Render the standard Google Sign-In button
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: googleBtnRef.current.offsetWidth,
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+        });
+      }
+    };
+
+    // GIS script may load asynchronously — poll until ready
+    if (window.google) {
+      initGoogleSignIn();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) {
+          clearInterval(interval);
+          initGoogleSignIn();
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  // Handle the Google credential response
+  const handleGoogleCallback = async (response: any) => {
+    setError('');
+    setLoading(true);
+    try {
+      await googleLogin(response.credential);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Google signup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -81,14 +133,17 @@ export function SignupPage() {
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
-          <button 
-            type="button" 
-            onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: "signup" } })}
-            className="mt-2 w-full py-3.5 rounded-xl bg-secondary-container text-on-secondary-container font-extrabold tracking-wide hover:bg-secondary-fixed-dim transition-all active:scale-[0.98]"
-           >
-            Sign up with Auth0
-          </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px bg-outline-variant/20"></div>
+          <span className="text-xs text-on-surface-variant uppercase tracking-widest font-semibold">or</span>
+          <div className="flex-1 h-px bg-outline-variant/20"></div>
+        </div>
+
+        {/* Standard Google Sign-In button rendered by GIS */}
+        <div ref={googleBtnRef} className="w-full flex justify-center"></div>
         
         <p className="mt-8 text-center text-sm text-on-surface-variant">
           Already have an account?{' '}

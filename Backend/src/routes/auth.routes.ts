@@ -5,6 +5,7 @@ import { Request, Response, NextFunction } from 'express';
 export function createAuthRoutes(authService: AuthService): Router {
   const router = Router();
 
+  // ─── Local Registration ────────────────────────────────────────────────────
   router.post(
     '/register',
     async (req: Request, res: Response, next: NextFunction) => {
@@ -30,6 +31,7 @@ export function createAuthRoutes(authService: AuthService): Router {
     }
   );
 
+  // ─── Local Login ───────────────────────────────────────────────────────────
   router.post(
     '/login',
     async (req: Request, res: Response, next: NextFunction) => {
@@ -52,22 +54,21 @@ export function createAuthRoutes(authService: AuthService): Router {
     }
   );
 
+  // ─── Google OAuth Login ────────────────────────────────────────────────────
+  // Receives the Google ID token from the frontend, verifies it, and returns
+  // our app's JWT + user object.
   router.post(
-    '/auth0-login',
+    '/google-login',
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { email, name, auth0Id } = req.body as {
-          email?: string;
-          name?: string;
-          auth0Id?: string;
-        };
+        const { credential } = req.body as { credential?: string };
 
-        if (!email || !auth0Id) {
-          res.status(400).json({ error: 'email and auth0Id are required' });
+        if (!credential) {
+          res.status(400).json({ error: 'Google credential token is required' });
           return;
         }
 
-        const result = await authService.auth0Login(email, name || '', auth0Id);
+        const result = await authService.googleLogin(credential);
         res.status(200).json(result);
       } catch (error) {
         next(error);
