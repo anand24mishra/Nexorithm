@@ -64,7 +64,7 @@ async function bootstrap(): Promise<void> {
     submissionRepo,
     problemRepo
   );
-  const authService = new AuthService(config.jwtSecret);
+  const authService = new AuthService(config.jwtSecret, config.googleClientId);
 
   const problemController = new ProblemController(problemService);
   const submissionController = new SubmissionController(submissionService);
@@ -84,13 +84,6 @@ async function bootstrap(): Promise<void> {
     createSubmissionRoutes(submissionController, authenticateToken(config.jwtSecret, false))
   );
   app.use('/api/auth', createAuthRoutes(authService));
-  console.log("Auth routes created")
-  console.log("Auth routes created")
-  console.log("Auth routes created")
-  console.log("Auth routes created")
-  console.log("Auth routes created")
-  console.log("Auth routes created")
-  console.log("Auth routes created")
 
 
 

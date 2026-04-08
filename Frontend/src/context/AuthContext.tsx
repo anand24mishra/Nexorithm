@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAuthToken, setAuthToken as setTokenStorage, removeAuthToken, authApi } from '../api/authApi';
-import { useAuth0 } from '@auth0/auth0-react';
 
 interface AuthState {
   token: string | null;
@@ -11,6 +10,8 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   login: (token: string, username: string) => void;
   logout: () => void;
+  // Handles the Google OAuth credential from GIS callback
+  googleLogin: (credential: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,30 +23,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     username: null,
   });
 
-  const { isAuthenticated: isAuth0Authenticated, user: auth0User, isLoading: isAuth0Loading, logout: auth0Logout } = useAuth0();
-
+  // On mount, restore session from localStorage token
   useEffect(() => {
-    const syncAuth0 = async () => {
-      // If Auth0 is authenticated but our local backend auth is NOT yet authenticated, we trigger backend login!
-      if (!isAuth0Loading && isAuth0Authenticated && auth0User && auth0User.email && !authState.isAuthenticated) {
-        try {
-          const res = await authApi.auth0Login(
-            auth0User.email,
-            auth0User.name || '',
-            auth0User.sub || ''
-          );
-          setTokenStorage(res.token);
-          setAuthState({ token: res.token, isAuthenticated: true, username: res.user.username });
-        } catch (err) {
-          console.error('Failed to sync Auth0 login with backend:', err);
-        }
-      }
-    };
-    syncAuth0();
-  }, [isAuth0Authenticated, auth0User, authState.isAuthenticated, isAuth0Loading, auth0Logout]);
-
-  useEffect(() => {
-    
     const token = getAuthToken();
     if (token) {
       try {
@@ -57,11 +36,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           username: payload.username || 'User',
         });
       } catch {
-        
         removeAuthToken();
       }
     }
 
+    // Listen for 401 unauthorized events from fetchWithAuth
     const handleUnauthorized = () => {
       setAuthState({ token: null, isAuthenticated: false, username: null });
     };
@@ -69,21 +48,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('auth_unauthorized', handleUnauthorized);
   }, []);
 
+  // Local login — stores token and updates auth state
   const login = (token: string, username: string) => {
     setTokenStorage(token);
     setAuthState({ token, isAuthenticated: true, username });
   };
 
+  // Logout — clears token and auth state
   const logout = () => {
     removeAuthToken();
     setAuthState({ token: null, isAuthenticated: false, username: null });
-    if (isAuth0Authenticated) {
-      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-    }
+  };
+
+  // Google OAuth login — sends credential to backend, then stores token
+  const googleLogin = async (credential: string) => {
+    const res = await authApi.googleLogin(credential);
+    setTokenStorage(res.token);
+    setAuthState({
+      token: res.token,
+      isAuthenticated: true,
+      username: res.user.username,
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );

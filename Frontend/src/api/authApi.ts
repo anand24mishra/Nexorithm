@@ -38,6 +38,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}, skip
 }
 
 export const authApi = {
+  // Local email/password login
   async login(email: string, password: string) {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
@@ -49,6 +50,7 @@ export const authApi = {
     return data;
   },
 
+  // Local email/password registration
   async register(username: string, email: string, password: string) {
     const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
@@ -60,14 +62,15 @@ export const authApi = {
     return data;
   },
 
-  async auth0Login(email: string, name: string, auth0Id: string) {
-    const res = await fetch(`${API_BASE}/auth/auth0-login`, {
+  // Google OAuth login — sends the Google ID token to backend for verification
+  async googleLogin(credential: string) {
+    const res = await fetch(`${API_BASE}/auth/google-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, auth0Id }),
+      body: JSON.stringify({ credential }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Auth0 Login failed');
+    if (!res.ok) throw new Error(data.error || 'Google login failed');
     return data;
   }
 };

@@ -163,6 +163,7 @@ export interface AppConfig {
   port: number;
   mongodbUri: string;
   jwtSecret: string;
+  googleClientId: string;
   useDb: boolean;
   nodeEnv: string;
 }

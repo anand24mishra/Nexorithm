@@ -22,14 +22,16 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
     },
-    auth0Id: {
+    // Google OAuth user ID (replaces auth0Id)
+    googleId: {
       type: String,
       unique: true,
       sparse: true,
     },
+    // Authentication provider: 'local' for email/password, 'google' for Google OAuth
     provider: {
       type: String,
-      enum: ['local', 'auth0'],
+      enum: ['local', 'google'],
       default: 'local',
     },
     role: {
