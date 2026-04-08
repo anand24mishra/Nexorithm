@@ -39,6 +39,21 @@ function WorkspaceShell() {
   }, [problem?.id]);
 
   useEffect(() => {
+    if (!problem || state.problemId !== problem.id) return;
+    const lang = state.language;
+    const starterCode = lang === Language.PYTHON
+      ? problem.starterCode.python
+      : problem.starterCode.javascript;
+    const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
+    dispatch({ type: 'SET_CODE', payload: savedDraft ?? starterCode });
+  }, [state.language, problem?.id, state.problemId]);
+
+  useEffect(() => {
+    if (!state.problemId || !state.code) return;
+    localStorage.setItem(`nexorithm-draft-${state.problemId}-${state.language}`, state.code);
+  }, [state.code, state.problemId, state.language]);
+
+  useEffect(() => {
     if (
       state.lastResult?.isSubmit &&
       state.lastResult?.verdict === 'Accepted' &&
