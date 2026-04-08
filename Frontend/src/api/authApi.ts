@@ -1,4 +1,5 @@
-export const API_BASE = 'http://localhost:8000/api';
+const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:5001/api';
+export const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('nx_token');

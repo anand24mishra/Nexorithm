@@ -3,8 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/authApi';
 
-// Google Client ID — same as LoginPage
-const GOOGLE_CLIENT_ID = '286013082590-f59ehv4o7njfs816kvkb4jip2fvdtjtb.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? '';
 
 export function SignupPage() {
   const [username, setUsername] = useState('');
@@ -19,6 +18,8 @@ export function SignupPage() {
 
   // Initialize Google Identity Services and render the standard Google button
   useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+
     const initGoogleSignIn = () => {
       if (window.google && googleBtnRef.current) {
         window.google.accounts.id.initialize({
@@ -29,7 +30,7 @@ export function SignupPage() {
         window.google.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'outline',
           size: 'large',
-          width: googleBtnRef.current.offsetWidth,
+          width: googleBtnRef.current.offsetWidth || 360,
           text: 'continue_with',
           shape: 'rectangular',
           logo_alignment: 'left',
@@ -142,8 +143,13 @@ export function SignupPage() {
           <div className="flex-1 h-px bg-outline-variant/20"></div>
         </div>
 
-        {/* Standard Google Sign-In button rendered by GIS */}
-        <div ref={googleBtnRef} className="w-full flex justify-center"></div>
+        {GOOGLE_CLIENT_ID ? (
+          <div ref={googleBtnRef} className="w-full flex justify-center"></div>
+        ) : (
+          <p className="text-center text-xs text-on-surface-variant">
+            Google sign-in is not configured.
+          </p>
+        )}
         
         <p className="mt-8 text-center text-sm text-on-surface-variant">
           Already have an account?{' '}
