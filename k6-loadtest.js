@@ -47,7 +47,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://localhost:5001/api';
+const BASE_URL = (__ENV.BASE_URL || 'http://localhost:8000/api').replace(/\/$/, '');
 
 
 
