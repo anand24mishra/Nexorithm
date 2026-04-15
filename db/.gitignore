@@ -1,9 +1,0 @@
-# DB .gitignore
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# OS
-.DS_Store
