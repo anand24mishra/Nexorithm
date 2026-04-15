@@ -9,7 +9,7 @@ import { AppError } from '../errors/AppError';
 
 
 abstract class BaseExecutor implements IExecutor {
-  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
+  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> { //Template
     const uniqueId = uuidv4();
     const ext = this.getFileExtension();
     const filePath = path.join('/tmp', `nexorithm-${uniqueId}.${ext}`);
@@ -19,7 +19,7 @@ abstract class BaseExecutor implements IExecutor {
       fs.writeFileSync(filePath, code, 'utf8');
       const command = this.getCommand(filePath);
 
-      const stdout = execSync(command, {
+      const stdout = execSync(command, { // adapter pattern
         input,
         timeout: timeoutMs,
         encoding: 'utf8',

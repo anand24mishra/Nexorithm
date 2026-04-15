@@ -13,14 +13,14 @@ export class JudgeService {
     language: Language,
     testCases: TestCase[]
   ): Promise<JudgeResult> {
-    const executor = ExecutorFactory.getExecutor(language);
+    const executor = ExecutorFactory.getExecutor(language);/* factory */
     const results: TestCaseResult[] = [];
     let passedCount = 0;
     let totalExecutionTimeMs = 0;
     let finalVerdict: Verdict = Verdict.ACCEPTED;
 
     for (const tc of testCases) {
-      const execResult = await executor.execute(code, tc.input);
+      const execResult = await executor.execute(code, tc.input);/* Strategy */
       totalExecutionTimeMs += execResult.executionTimeMs;
 
       const actualOutput = execResult.stdout.trim();

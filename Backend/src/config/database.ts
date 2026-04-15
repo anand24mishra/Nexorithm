@@ -9,7 +9,7 @@ export async function connectDatabase(uri: string): Promise<void> {
   }
 
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri);// Singleton
     isConnected = true;
     console.log('Connected to MongoDB successfully');
   } catch (error) {
