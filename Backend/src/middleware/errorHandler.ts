@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
-
 export function globalErrorHandler(
   err: Error,
   _req: Request,
