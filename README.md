@@ -454,7 +454,7 @@ graph LR
 ## Design Patterns
 
 <details>
-<summary><strong>Click to expand -- 7 Design Patterns with Code</strong></summary>
+<summary><strong>Click to expand -- 5 Design Patterns with Code</strong></summary>
 <br>
 
 ### 1. Factory Pattern
@@ -554,49 +554,7 @@ const result = await executor.execute(code, tc.input);   // Execute strategy
 
 ---
 
-### 4. Repository Pattern
-
-**Where:** `IProblemRepository` and `ISubmissionRepository` in `Backend/src/interfaces/`
-
-**Purpose:** Abstracts data access behind interfaces, allowing swap between MongoDB and in-memory implementations without changing business logic.
-
-```typescript
-// Repository interface
-export interface IProblemRepository {
-  findAll(params: ProblemListParams): Promise<{ problems: ProblemListItem[]; total: number }>;
-  findBySlug(slug: string): Promise<NexorithmProblem | null>;
-  findById(id: string): Promise<NexorithmProblem | null>;
-  upsert(problem: NexorithmProblem): Promise<void>;
-}
-
-// MongoDB implementation
-export class MongoProblemRepository implements IProblemRepository {
-  async findBySlug(slug: string) {
-    const doc = await ProblemModel.findOne({ slug }).lean();
-    return doc ? this.docToProblem(doc) : null;
-  }
-}
-
-// In-memory mock implementation
-export class MockProblemRepository implements IProblemRepository {
-  private problems: NexorithmProblem[] = [...seedProblems];
-  async findBySlug(slug: string) {
-    return this.problems.find(p => p.slug === slug) ?? null;
-  }
-}
-```
-
-**Swapped via config in** `Backend/src/index.ts`:
-
-```typescript
-const problemRepo = config.useDb
-  ? new MongoProblemRepository()    // Production
-  : new MockProblemRepository();    // Development
-```
-
----
-
-### 5. Adapter Pattern
+### 4. Adapter Pattern
 
 **Where:** `LeetCodeApiClient` in `Backend/src/api/external/LeetCodeApiClient.ts`
 
@@ -629,33 +587,7 @@ export class LeetCodeApiClient implements IExternalProblemApi {
 
 ---
 
-### 6. Dependency Injection
-
-**Where:** `Backend/src/index.ts` (the composition root)
-
-**Purpose:** All services receive their dependencies via constructor parameters. The `bootstrap()` function wires the entire dependency graph.
-
-```typescript
-async function bootstrap() {
-  // Create repositories (swappable implementations)
-  const problemRepo = config.useDb ? new MongoProblemRepository() : new MockProblemRepository();
-  const submissionRepo = config.useDb ? new MongoSubmissionRepository() : new MockSubmissionRepository();
-
-  // Inject dependencies into services
-  const externalApi = new LeetCodeApiClient();
-  const judgeService = new JudgeService();
-  const problemService = new ProblemService(problemRepo, externalApi);
-  const submissionService = new SubmissionService(judgeService, submissionRepo, problemRepo);
-
-  // Inject services into controllers
-  const problemController = new ProblemController(problemService);
-  const submissionController = new SubmissionController(submissionService);
-}
-```
-
----
-
-### 7. Singleton Pattern
+### 5. Singleton Pattern
 
 **Where:** `connectDatabase()` in `Backend/src/config/database.ts`
 
@@ -683,9 +615,7 @@ export async function connectDatabase(uri: string): Promise<void> {
 | Factory | `ExecutorFactory` | Creates language-specific executors from a Map registry |
 | Template Method | `BaseExecutor` | Skeleton algorithm for execute with abstract getCommand and getFileExtension |
 | Strategy | `IExecutor` / `JudgeService` | Interchangeable execution strategies selected at runtime |
-| Repository | `IProblemRepository`, `ISubmissionRepository` | Abstract data access, swap between Mongo and Mock |
 | Adapter | `LeetCodeApiClient` | Unifies Vercel REST and LeetCode GraphQL behind one interface |
-| Dependency Injection | `index.ts` bootstrap | All dependencies wired via constructor, no hard-coded coupling |
 | Singleton | `connectDatabase()` | Single MongoDB connection guard |
 | Reducer | Frontend `WorkspaceContext` | Predictable state management with typed actions |
 
