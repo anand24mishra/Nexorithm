@@ -165,7 +165,7 @@ Nexorithm/
 
 ---
 
-## Database Design
+## Class Diagram
 
 <details>
 <summary><strong>Click to expand -- Class Diagram and Schema</strong></summary>
