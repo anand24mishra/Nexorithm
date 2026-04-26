@@ -22,15 +22,6 @@ jobs:
       - name: Build Backend Image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/nexorithm-backend:latest ./Backend
 
-      - name: Build Frontend Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/nexorithm-frontend:latest ./Frontend
-
-      - name: Push Backend
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/nexorithm-backend:latest
-
-      - name: Push Frontend
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/nexorithm-frontend:latest
-
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.0
         with:
