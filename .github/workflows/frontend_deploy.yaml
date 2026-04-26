@@ -6,6 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
+          working-directory: Frontend
           cd Frontend
           npm ci
           npm run build
