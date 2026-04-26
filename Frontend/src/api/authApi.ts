@@ -1,4 +1,5 @@
-const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:5001/api';
+const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:8000/api';
+
 export const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
 export function getAuthToken(): string | null {
@@ -16,11 +17,11 @@ export function removeAuthToken(): void {
 export async function fetchWithAuth(url: string, options: RequestInit = {}, skipAuthRedirect = false): Promise<Response> {
   const token = getAuthToken();
   const headers = new Headers(options.headers || {});
-  
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  
+
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }

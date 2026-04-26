@@ -167,3 +167,38 @@ export interface AppConfig {
   useDb: boolean;
   nodeEnv: string;
 }
+
+export interface DashboardStats {
+  solved: number;
+  easy: number;
+  medium: number;
+  hard: number;
+  totalProblems: number;
+  globalRank: number;
+  percentile: number;
+  acceptance: number;
+  streak: number;
+}
+
+export interface DashboardRecentSubmission {
+  id: string;
+  title: string;
+  status: 'ACCEPTED' | 'WRONG ANSWER' | 'TLE';
+  timestamp: string;
+  language: string;
+}
+
+export interface DashboardRecommendation {
+  id: string;
+  title: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  tags: string[];
+  acceptance: number;
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  activityData: number[][];
+  recentSubmissions: DashboardRecentSubmission[];
+  recommendations: DashboardRecommendation[];
+}
