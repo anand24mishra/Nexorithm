@@ -1,4 +1,8 @@
-const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:8000/api';
+const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim()
+
+if (!rawApiBase) {
+  throw new Error("VITE_API_BASE_URL is not defined");
+}
 
 export const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
