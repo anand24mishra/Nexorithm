@@ -1,17 +1,10 @@
 const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
-const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-const fallbackApiBase = isLocalHost
-  ? 'http://localhost:5001/api'
-  : 'https://api.anandmishra.dev/api';
 
 if (!rawApiBase) {
-  console.warn('VITE_API_BASE_URL is not defined. Using fallback API base:', fallbackApiBase);
+  throw new Error('VITE_API_BASE_URL is not defined');
 }
 
-const resolvedApiBase = rawApiBase || fallbackApiBase;
-export const API_BASE = resolvedApiBase.endsWith('/') ? resolvedApiBase.slice(0, -1) : resolvedApiBase;
+export const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('nx_token');
