@@ -3,7 +3,7 @@ name: Docker CI/CD
 on:
   push:
     branches:
-      - anand
+      - main
 
 jobs:
   build-and-push:
