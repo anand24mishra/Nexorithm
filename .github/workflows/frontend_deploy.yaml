@@ -5,9 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          working-directory: Frontend
-          cd Frontend
+      - working-directory: Frontend
+        run: |
           npm ci
           npm run build
 
