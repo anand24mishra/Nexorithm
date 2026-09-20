@@ -1,10 +1,18 @@
-name: Frontend Ci CD
-on: [push]
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create Frontend .env
         working-directory: Frontend
         run: |
@@ -12,21 +20,27 @@ jobs:
           VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
           VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           EOF
-      - working-directory: Frontend
+
+      - name: Install dependencies and build
+        working-directory: Frontend
         run: |
           npm ci
           npm run build
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-      - run: aws s3 sync dist/ s3://${{ secrets.AWS_BUCKET_NAME }} --delete
+
+      - name: Deploy to S3
         working-directory: Frontend
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.AWS_BUCKET_NAME }} --delete
+
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
-        working-directory: Frontend
