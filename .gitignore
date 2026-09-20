@@ -13,9 +13,10 @@ pnpm-debug.log*
 node_modules/
 dist/
 
-# Env files
+# Environment variables
 .env
-.env.local
+.env.*
+!.env.example
 
 # Build artifacts
 *.tsbuildinfo
