@@ -273,7 +273,7 @@ export function LandingPage() {
             </div>
             <div>
               <h4>Connect</h4>
-              <a href="https://github.com/rajatrsrivastav/Nexorithm" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="https://github.com/anand-242003/Nexorithm" target="_blank" rel="noreferrer">GitHub</a>
               <a href="#">Discord</a>
               <a href="#">Twitter</a>
             </div>

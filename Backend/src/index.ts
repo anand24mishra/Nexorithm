@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 dotenv.config();
 
 import { loadConfig } from './config';
@@ -66,13 +67,13 @@ async function bootstrap(): Promise<void> {
   const submissionController = new SubmissionController(submissionService);
   const dashboardController = new DashboardController(dashboardService);
 
-  app.get('/api/health', (_req, res) => {
-    res.status(200).json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      dbConnected: config.useDb,
-    });
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    dbConnected: mongoose.connection.readyState === 1
   });
+});
 
   app.use('/api/problems', createProblemRoutes(problemController));
   app.use(
