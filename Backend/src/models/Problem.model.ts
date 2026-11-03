@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const testCaseSchema = new mongoose.Schema(
   {
@@ -6,15 +6,15 @@ const testCaseSchema = new mongoose.Schema(
     expectedOutput: { type: String, required: true },
     isHidden: { type: Boolean, default: false },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const starterCodeSchema = new mongoose.Schema(
   {
-    javascript: { type: String, default: '// Write your solution here\n' },
-    python: { type: String, default: '# Write your solution here\n' },
+    javascript: { type: String, default: "// Write your solution here\n" },
+    python: { type: String, default: "# Write your solution here\n" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const problemSchema = new mongoose.Schema(
@@ -24,19 +24,25 @@ const problemSchema = new mongoose.Schema(
     title: { type: String, required: true },
     difficulty: {
       type: String,
-      enum: ['easy', 'medium', 'hard'],
+      enum: ["easy", "medium", "hard"],
       required: true,
     },
-    content: { type: String, default: '' },
+    content: { type: String, default: "" },
     tags: [{ type: String }],
+    execution: {
+      functionName: String,
+      inputMode: { type: String, enum: ["json-args", "legacy-lines"] },
+      comparison: { type: String, enum: ["json", "exact", "trim", "float"] },
+      tolerance: Number,
+    },
     starterCode: { type: starterCodeSchema, default: () => ({}) },
     testCases: [testCaseSchema],
-    sampleInput: { type: String, default: '' },
-    sampleOutput: { type: String, default: '' },
+    sampleInput: { type: String, default: "" },
+    sampleOutput: { type: String, default: "" },
     hints: [{ type: String }],
     acRate: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const ProblemModel = mongoose.model('Problem', problemSchema);
+export const ProblemModel = mongoose.model("Problem", problemSchema);

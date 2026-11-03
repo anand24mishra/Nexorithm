@@ -1,0 +1,27 @@
+# Public ingress is deliberately absent. Use a dedicated Linux runner VM.
+services:
+  backend-api:
+    environment:
+      NODE_ENV: production
+  judge-worker:
+    environment:
+      NODE_ENV: production
+      SANDBOX_RUNTIME: runsc
+      ALLOW_WEAK_SANDBOX: "false"
+      DOCKER_HOST: ${RUNNER_DOCKER_HOST:?Use dedicated runtime daemon over mTLS}
+      DOCKER_TLS_VERIFY: "1"
+      DOCKER_CERT_PATH: /run/runtime-certs
+    volumes: !override
+      - ${RUNNER_CERTS_DIR:?Set dedicated runtime client certificate directory}:/run/runtime-certs:ro
+    group_add: !reset []
+  sandbox-reaper:
+    environment:
+      NODE_ENV: production
+      SANDBOX_RUNTIME: runsc
+      ALLOW_WEAK_SANDBOX: "false"
+      DOCKER_HOST: ${RUNNER_DOCKER_HOST:?Use dedicated runtime daemon over mTLS}
+      DOCKER_TLS_VERIFY: "1"
+      DOCKER_CERT_PATH: /run/runtime-certs
+    volumes: !override
+      - ${RUNNER_CERTS_DIR:?Set dedicated runtime client certificate directory}:/run/runtime-certs:ro
+    group_add: !reset []

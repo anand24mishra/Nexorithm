@@ -1,5 +1,5 @@
 import { Language } from '../../types';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 
 export function LanguageSelector({ onLanguageChange }: { onLanguageChange?: (lang: Language) => void }) {
   const { state, dispatch } = useWorkspace();

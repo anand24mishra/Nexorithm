@@ -1,36 +1,30 @@
 export interface TestCase {
-  input: string;  
+  input: string;
   expectedOutput: string;
 }
-
-
-
 
 export interface Problem {
   id: string;
   title: string;
   description: string;
   testCases: TestCase[];
-
 }
 
 export const mockProblems: Problem[] = [
   {
-    id: '1',
-    title: 'Print Hello World',
+    id: "1",
+    title: "Print Hello World",
     description: 'Print "Hello, World!" to stdout.',
-    testCases: [
-      { input: 'Hello, World!', expectedOutput: 'Hello, World!' },
-    ],
+    testCases: [{ input: "Hello, World!", expectedOutput: "Hello, World!" }],
   },
   {
-    id: '2',
-    title: 'Add Two Numbers',
-    description: 'Read two integers from stdin and print their sum.',
+    id: "2",
+    title: "Add Two Numbers",
+    description: "Read two integers from stdin and print their sum.",
     testCases: [
-      { input: '3 5', expectedOutput: '8' },
-      { input: '10 20', expectedOutput: '30' },
-      { input: '-1 1', expectedOutput: '0' },
+      { input: "3 5", expectedOutput: "8" },
+      { input: "10 20", expectedOutput: "30" },
+      { input: "-1 1", expectedOutput: "0" },
     ],
   },
 ];

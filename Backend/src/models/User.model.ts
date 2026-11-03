@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -31,16 +31,16 @@ const userSchema = new mongoose.Schema(
     // Authentication provider: 'local' for email/password, 'google' for Google OAuth
     provider: {
       type: String,
-      enum: ['local', 'google'],
-      default: 'local',
+      enum: ["local", "google"],
+      default: "local",
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ["user", "admin"],
+      default: "user",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const UserModel = mongoose.model('User', userSchema);
+export const UserModel = mongoose.model("User", userSchema);

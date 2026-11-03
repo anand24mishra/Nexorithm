@@ -9,12 +9,13 @@ export function useProblem(slug: string) {
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
+    void Promise.resolve().then(() => { if (!cancelled) { setLoading(true); setError(null); } });
     problemApi.getBySlug(slug)
-      .then((data) => setProblem(data as unknown as NexorithmProblem))
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setProblem(data as unknown as NexorithmProblem); })
+      .catch((e: Error) => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [slug]);
 
   return { problem, loading, error };

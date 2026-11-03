@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { dashboardApi, type DashboardData } from "../api/dashboard";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authState";
 
 export function useDashboard() {
   const { isAuthenticated } = useAuth();

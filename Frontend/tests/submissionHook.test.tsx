@@ -1,0 +1,71 @@
+import React from "react";
+import { afterEach, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { WorkspaceProvider } from "../src/context/WorkspaceContext";
+import { useWorkspace } from "../src/context/workspaceState";
+import { useSubmission } from "../src/hooks/useSubmission";
+import { submissionApi } from "../src/api/submissionApi";
+vi.mock("../src/api/submissionApi", () => ({
+  submissionApi: { submit: vi.fn(), get: vi.fn() },
+}));
+afterEach(() => {
+  cleanup();
+  vi.resetAllMocks();
+});
+function Controls() {
+  const { dispatch, state } = useWorkspace();
+  const { submitCode } = useSubmission();
+  return (
+    <>
+      <button
+        onClick={() =>
+          dispatch({
+            type: "SET_PROBLEM",
+            payload: { problemId: "1", code: "function solve(){}" },
+          })
+        }
+      >
+        Setup
+      </button>
+      <button onClick={submitCode}>Submit</button>
+      <span data-testid="busy">{String(state.isSubmitting)}</span>
+    </>
+  );
+}
+it("synchronously prevents duplicate submit clicks and clears busy on terminal result", async () => {
+  let release!: (value: { submissionId: string; status: "queued" }) => void;
+  vi.mocked(submissionApi.submit).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  vi.mocked(submissionApi.get).mockResolvedValue({
+    id: "id",
+    status: "completed",
+    verdict: "Accepted",
+    passedTestCases: 1,
+    totalTestCases: 1,
+    executionTimeMs: 1,
+  } as Awaited<ReturnType<typeof submissionApi.get>>);
+  render(
+    <WorkspaceProvider>
+      <Controls />
+    </WorkspaceProvider>,
+  );
+  fireEvent.click(screen.getByText("Setup"));
+  fireEvent.click(screen.getByText("Submit"));
+  fireEvent.click(screen.getByText("Submit"));
+  expect(submissionApi.submit).toHaveBeenCalledTimes(1);
+  await act(async () => release({ submissionId: "id", status: "queued" }));
+  await waitFor(() =>
+    expect(screen.getByTestId("busy").textContent).toBe("false"),
+  );
+});

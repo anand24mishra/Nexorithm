@@ -12,7 +12,7 @@ function formatDate(d: string | Date) {
 }
 
 export function SubmissionHistory({ problemId, onSelectSubmission }: Props) {
-  const { submissions, isLoading, error } = useSubmissionHistory(problemId);
+  const { submissions, isLoading, error, page, totalPages, setPage, refresh } = useSubmissionHistory(problemId);
 
   if (isLoading) {
     return (
@@ -25,7 +25,7 @@ export function SubmissionHistory({ problemId, onSelectSubmission }: Props) {
   if (error) {
     return (
       <div style={{ padding: '16px', color: 'var(--accent-red)', background: 'rgba(248,81,73,0.1)', borderRadius: 'var(--radius-md)' }}>
-        {error}
+        {error} <button onClick={refresh}>Retry history</button>
       </div>
     );
   }
@@ -41,6 +41,7 @@ export function SubmissionHistory({ problemId, onSelectSubmission }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <nav aria-label="Submission pages" style={{ display: 'flex', gap: 12 }}><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} of {Math.max(1, totalPages)}</span><button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button></nav>
       {submissions.map((sub: Submission) => (
         <div
           key={sub.id}
@@ -65,7 +66,7 @@ export function SubmissionHistory({ problemId, onSelectSubmission }: Props) {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <VerdictBadge verdict={sub.verdict} />
+            <VerdictBadge verdict={sub.verdict || (sub.status === 'running' ? 'Running' : 'Queued')} />
             <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
               {formatDate(sub.submittedAt)}
             </div>

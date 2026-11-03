@@ -19,3 +19,9 @@ dist/
 
 # Build artifacts
 *.tsbuildinfo
+
+.env
+monitoring/metrics-token
+**/coverage/
+**/test-results/
+**/playwright-report/

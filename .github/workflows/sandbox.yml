@@ -1,0 +1,25 @@
+name: Isolated sandbox acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sandbox:
+    # Dedicated disposable Linux machine with runsc; never run hostile tests on a general shared runner.
+    runs-on: [self-hosted, linux, nexorithm-isolated]
+    environment: sandbox-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - run: npm ci
+        working-directory: Backend
+      - run: |
+          docker pull python:3.12.10-slim-bookworm
+          docker pull node:22.15.0-bookworm-slim
+      - run: npm run test:security
+        working-directory: Backend
+        env:
+          RUN_SANDBOX_SECURITY: '1'
+          SANDBOX_RUNTIME: runsc

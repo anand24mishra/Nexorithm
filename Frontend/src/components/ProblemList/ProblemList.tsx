@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useProblems } from "../../hooks/useProblems";
 import { useSubmissionHistory } from "../../hooks/useSubmissionHistory";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/authState";
 
 const diffConfig: Record<
   string,
@@ -39,7 +39,8 @@ export function ProblemList() {
     search || undefined,
     limit,
   );
-  const { submissions } = useSubmissionHistory();
+  const { submissions: submissionData } = useSubmissionHistory();
+  const submissions = Array.isArray(submissionData) ? submissionData : [];
   const { isAuthenticated, username, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 

@@ -2,12 +2,13 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProblem } from '../hooks/useProblem';
 import { useProblems } from '../hooks/useProblems';
-import { WorkspaceProvider, useWorkspace } from '../context/WorkspaceContext';
+import { WorkspaceProvider } from '../context/WorkspaceContext';
+import { useWorkspace } from '../context/workspaceState';
 import { NxProblemPanel } from '../components/Workspace/NxProblemPanel';
 import { NxEditorPanel } from '../components/Workspace/NxEditorPanel';
 import { NxTestPanel } from '../components/Workspace/NxTestPanel';
 import { useSubmission } from '../hooks/useSubmission';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/authState';
 import { Language } from '../types';
 import Confetti from 'react-confetti';
 
@@ -34,19 +35,13 @@ function WorkspaceShell() {
       ? problem.starterCode.python
       : problem.starterCode.javascript;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code: savedDraft ?? starterCode } });
-  
-  }, [problem?.id]);
-
-  useEffect(() => {
-    if (!problem || state.problemId !== problem.id) return;
-    const lang = state.language;
-    const starterCode = lang === Language.PYTHON
-      ? problem.starterCode.python
-      : problem.starterCode.javascript;
-    const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    dispatch({ type: 'SET_CODE', payload: savedDraft ?? starterCode });
-  }, [state.language, problem?.id, state.problemId]);
+    const code = savedDraft ?? starterCode;
+    if (state.problemId !== problem.id) {
+      dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code } });
+    } else {
+      dispatch({ type: 'SET_CODE', payload: code });
+    }
+  }, [dispatch, problem, state.language, state.problemId]);
 
   useEffect(() => {
     if (!state.problemId || !state.code) return;
@@ -60,9 +55,9 @@ function WorkspaceShell() {
       prevResult.current !== JSON.stringify(state.lastResult)
     ) {
       prevResult.current = JSON.stringify(state.lastResult);
-      setShowConfetti(true);
+      const start = setTimeout(() => setShowConfetti(true), 0);
       const t = setTimeout(() => setShowConfetti(false), 6000);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(start); clearTimeout(t); };
     }
   }, [state.lastResult]);
 
@@ -209,9 +204,9 @@ function WorkspaceShell() {
         </aside>
 
         {}
-        <main className="flex-1 grid grid-cols-12 gap-px bg-surface-container-lowest overflow-hidden">
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-px bg-surface-container-lowest overflow-y-auto lg:overflow-hidden">
           {}
-          <section className="col-span-4 bg-surface-container-low flex flex-col overflow-hidden">
+          <section className="col-span-1 lg:col-span-4 min-h-[320px] lg:min-h-0 bg-surface-container-low flex flex-col overflow-hidden">
             {loading && (
               <div className="flex-1 flex items-center justify-center gap-3 text-on-surface-variant">
                 <span className="spinner" style={{ width: 20, height: 20 }} />
@@ -230,12 +225,12 @@ function WorkspaceShell() {
           </section>
 
           {}
-          <section className="col-span-5 bg-surface-container-high flex flex-col overflow-hidden">
+          <section className="col-span-1 lg:col-span-5 min-h-[420px] lg:min-h-0 bg-surface-container-high flex flex-col overflow-hidden">
             {problem && <NxEditorPanel problem={problem} />}
           </section>
 
           {}
-          <section className="col-span-3 bg-surface-container-low flex flex-col overflow-hidden">
+          <section className="col-span-1 lg:col-span-3 min-h-[320px] lg:min-h-0 bg-surface-container-low flex flex-col overflow-hidden">
             <NxTestPanel />
           </section>
         </main>

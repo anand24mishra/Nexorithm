@@ -11,6 +11,10 @@ export enum Verdict {
   RUNTIME_ERROR = 'Runtime Error',
   TIME_LIMIT_EXCEEDED = 'Time Limit Exceeded',
   COMPILE_ERROR = 'Compile Error',
+  MEMORY_LIMIT_EXCEEDED = 'Memory Limit Exceeded',
+  OUTPUT_LIMIT_EXCEEDED = 'Output Limit Exceeded',
+  SYSTEM_ERROR = 'System Error',
+  CANCELLED = 'Cancelled',
 }
 
 export enum Difficulty {
@@ -83,6 +87,7 @@ export interface SubmissionResult {
   executionTimeMs: number;
   results: TestCaseResult[];
   isSubmit?: boolean;
+  queueWaitMs?: number;
 }
 
 
@@ -104,6 +109,7 @@ export type WorkspaceAction =
   | { type: 'SET_CODE'; payload: string }
   | { type: 'SET_LANGUAGE'; payload: Language }
   | { type: 'SET_PROBLEM'; payload: { problemId: string; code: string } }
+  | { type: 'SUBMISSION_STATUS'; payload: string }
   | { type: 'RUN_START' }
   | { type: 'RUN_SUCCESS'; payload: SubmissionResult }
   | { type: 'RUN_ERROR'; payload: string }
@@ -122,6 +128,9 @@ export interface Submission {
   language: Language;
   code: string;
   verdict: Verdict;
+  status?: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  result?: SubmissionResult;
+  queueWaitMs?: number;
   passedTestCases: number;
   totalTestCases: number;
   executionTimeMs: number;

@@ -1,5 +1,6 @@
+import { SubmissionStatus } from './SubmissionStatus';
 import { useState } from 'react';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 import { VerdictBadge } from '../common/VerdictBadge';
 
 type ConsoleTab = 'testcase' | 'result';
@@ -14,7 +15,7 @@ export function NxTestPanel() {
   const [consoleOpen, setConsoleOpen] = useState(true);
 
   
-  const activeConsoleTab = state.lastResult ? 'result' : consoleTab;
+  const activeConsoleTab = state.lastResult || state.isRunning || state.isSubmitting || state.consoleOutput ? 'result' : consoleTab;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -90,12 +91,7 @@ export function NxTestPanel() {
         {}
         {activeConsoleTab === 'result' && (
           <div className="flex-1 overflow-y-auto">
-            {(state.isRunning || state.isSubmitting) && (
-              <div className="flex items-center gap-3 p-6 text-on-surface-variant text-sm">
-                <span className="spinner" />
-                {state.isSubmitting ? 'Submitting your code…' : 'Running your code…'}
-              </div>
-            )}
+            <SubmissionStatus />
             {!state.isRunning && !state.isSubmitting && !state.lastResult && (
               <div className="p-6 text-on-surface-variant/50 text-sm text-center">
                 <div className="text-3xl mb-3">🖥️</div>
