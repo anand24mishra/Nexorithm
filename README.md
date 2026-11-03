@@ -2,6 +2,26 @@
 
 A full-stack competitive programming platform built with React, Express, TypeScript, and MongoDB. Users can browse LeetCode-style coding problems, write solutions in an integrated Monaco code editor, submit code for automated judging against test cases, and track their submission history.
 
+## Judge status
+
+Submissions flow through an asynchronous Express API, a MongoDB durable outbox, BullMQ/Redis, a separate judge worker and per-test Python/JavaScript containers. `POST /api/submissions` returns HTTP 202. The API never imports or invokes an executor.
+
+This repository was verified on 2026-10-28 as a local Docker Desktop stack using the ordinary `runc` runtime. Production mode still fails closed unless `runsc` is installed. Public untrusted-code execution is not enabled. The measured results are in [FINAL_VERIFICATION_REPORT.md](FINAL_VERIFICATION_REPORT.md).
+
+```bash
+cp .env.example .env
+# Replace every example secret. On Docker Desktop for macOS the local
+# verification used SANDBOX_RUNTIME=runc, ALLOW_WEAK_SANDBOX=true and
+# DOCKER_GID=0. That combination is not a production sandbox.
+./scripts/prepare-local.sh
+docker compose up --build
+docker compose exec backend-api npm run migrate
+```
+
+Compose publishes the frontend on `127.0.0.1:${FRONTEND_BIND:-8080}` and Grafana on `127.0.0.1:${GRAFANA_BIND:-3000}`. The verified machine used 8088 and 3001 because 8080 and 3000 were already taken. MongoDB, Redis, the API and the worker stay on the Compose network.
+
+Start with the [engineering audit](docs/engineering-audit.md), [architecture](docs/architecture.md), [execution security](docs/execution-security.md), [local development](docs/local-development.md), [deployment](docs/deployment.md), [testing](docs/testing.md), [observability](docs/observability.md), [migration](docs/migration-guide.md) and [benchmark protocol](docs/performance-benchmarks.md).
+
 ---
 
 ## Table of Contents
@@ -1002,4 +1022,3 @@ docker-compose up --build    # Starts backend on port 5001
 | `GOOGLE_CLIENT_ID` | (empty) | Google OAuth client ID |
 | `USE_DB` | `false` | `true` for MongoDB, `false` for in-memory mock |
 | `NODE_ENV` | `development` | Environment mode |
-

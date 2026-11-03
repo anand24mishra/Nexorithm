@@ -1,26 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { AuthContext } from './authState';
+import type { AuthState } from './authState';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   getAuthToken,
   setAuthToken as setTokenStorage,
   removeAuthToken,
   authApi,
 } from "../api/authApi";
-
-interface AuthState {
-  token: string | null;
-  isAuthenticated: boolean;
-  username: string | null;
-  isReady: boolean;
-}
-
-interface AuthContextType extends AuthState {
-  login: (token: string, username: string) => void;
-  logout: () => void;
-  // Handles the Google OAuth credential from GIS callback
-  googleLogin: (credential: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
@@ -79,13 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Local login — stores token and updates auth state
-  const login = (token: string, username: string) => {
+  const login = useCallback((token: string, username: string) => {
     setTokenStorage(token);
     setAuthState({ token, isAuthenticated: true, username, isReady: true });
-  };
+  }, []);
 
-  // Logout — clears token and auth state
-  const logout = () => {
+  const logout = useCallback(() => {
     removeAuthToken();
     setAuthState({
       token: null,
@@ -93,10 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       username: null,
       isReady: true,
     });
-  };
+  }, []);
 
-  // Google OAuth login — sends credential to backend, then stores token
-  const googleLogin = async (credential: string) => {
+  const googleLogin = useCallback(async (credential: string) => {
     const res = await authApi.googleLogin(credential);
     setTokenStorage(res.token);
     setAuthState({
@@ -105,19 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       username: res.user.username,
       isReady: true,
     });
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ ...authState, login, logout, googleLogin }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

@@ -1,6 +1,6 @@
 import { ProblemList } from '../components/ProblemList/ProblemList';
 import { LandingPage } from './LandingPage';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/authState';
 
 export function HomePage() {
   const { isAuthenticated, isReady } = useAuth();

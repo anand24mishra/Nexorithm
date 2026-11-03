@@ -1,9 +1,9 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { OAuth2Client } from 'google-auth-library';
-import { UserModel } from '../models/User.model';
-import { AuthResponse, JwtPayload } from '../types';
-import { AppError, ValidationError, AuthenticationError } from '../errors/AppError';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
+import { UserModel } from "../models/User.model";
+import { AuthResponse, JwtPayload } from "../types";
+import { ValidationError, AuthenticationError } from "../errors/AppError";
 
 export class AuthService {
   private readonly jwtSecret: string;
@@ -11,7 +11,7 @@ export class AuthService {
   private readonly googleClient: OAuth2Client;
   private readonly googleClientId: string;
 
-  constructor(jwtSecret: string, googleClientId: string, jwtExpiry = '7d') {
+  constructor(jwtSecret: string, googleClientId: string, jwtExpiry = "1h") {
     this.jwtSecret = jwtSecret;
     this.jwtExpiry = jwtExpiry;
     this.googleClientId = googleClientId;
@@ -23,20 +23,19 @@ export class AuthService {
   async register(
     username: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<AuthResponse> {
     const existingUser = await UserModel.findOne({
       $or: [{ email }, { username }],
     });
 
     if (existingUser) {
-      const field =
-        existingUser.email === email ? 'email' : 'username';
+      const field = existingUser.email === email ? "email" : "username";
       throw new ValidationError(`User with this ${field} already exists`);
     }
 
     if (password.length < 6) {
-      throw new ValidationError('Password must be at least 6 characters');
+      throw new ValidationError("Password must be at least 6 characters");
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
@@ -45,20 +44,20 @@ export class AuthService {
       username,
       email,
       passwordHash,
-      role: 'user',
+      role: "user",
     });
 
     const token = this.generateToken({
       userId: String(user._id),
-      username: user.username || user.name || 'anonymous',
-      role: user.role as 'user' | 'admin',
+      username: user.username || user.name || "anonymous",
+      role: user.role as "user" | "admin",
     });
 
     return {
       token,
       user: {
         id: String(user._id),
-        username: user.username || user.name || 'anonymous',
+        username: user.username || user.name || "anonymous",
         email: user.email,
       },
     };
@@ -68,25 +67,25 @@ export class AuthService {
   async login(email: string, password: string): Promise<AuthResponse> {
     const user = await UserModel.findOne({ email });
     if (!user || !user.passwordHash) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError("Invalid email or password");
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError("Invalid email or password");
     }
 
     const token = this.generateToken({
       userId: String(user._id),
-      username: user.username || user.name || 'anonymous',
-      role: user.role as 'user' | 'admin',
+      username: user.username || user.name || "anonymous",
+      role: user.role as "user" | "admin",
     });
 
     return {
       token,
       user: {
         id: String(user._id),
-        username: user.username || user.name || 'anonymous',
+        username: user.username || user.name || "anonymous",
         email: user.email,
       },
     };
@@ -103,12 +102,12 @@ export class AuthService {
         audience: this.googleClientId,
       });
       payload = ticket.getPayload();
-    } catch (err) {
-      throw new AuthenticationError('Invalid Google token');
+    } catch {
+      throw new AuthenticationError("Invalid Google token");
     }
 
-    if (!payload || !payload.email) {
-      throw new AuthenticationError('Google token missing email');
+    if (!payload || !payload.email || !payload.email_verified) {
+      throw new AuthenticationError("Google token missing email");
     }
 
     // Step 2: Extract user info from verified token
@@ -119,20 +118,20 @@ export class AuthService {
 
     if (!user) {
       // Generate a unique username from email prefix
-      const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
       const uniqueSuffix = Math.floor(Math.random() * 100000);
       user = await UserModel.create({
         username: `${baseUsername}_${uniqueSuffix}`,
         email,
-        name: name || '',
+        name: name || "",
         googleId,
-        provider: 'google',
-        role: 'user',
+        provider: "google",
+        role: "user",
       });
     } else if (!user.googleId) {
       // Link Google account to existing local user
       user.googleId = googleId;
-      user.provider = 'google';
+      user.provider = "google";
       if (name && !user.name) {
         user.name = name;
       }
@@ -142,15 +141,15 @@ export class AuthService {
     // Step 4: Generate JWT for our app
     const token = this.generateToken({
       userId: String(user._id),
-      username: user.username || user.name || 'anonymous',
-      role: user.role as 'user' | 'admin',
+      username: user.username || user.name || "anonymous",
+      role: user.role as "user" | "admin",
     });
 
     return {
       token,
       user: {
         id: String(user._id),
-        username: user.username || user.name || 'anonymous',
+        username: user.username || user.name || "anonymous",
         email: user.email,
       },
     };

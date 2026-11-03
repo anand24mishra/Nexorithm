@@ -1,203 +1,250 @@
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import { IExecutor } from '../interfaces/IExecutor';
-import { ExecutionResult, Language } from '../types';
-import { AppError } from '../errors/AppError';
+import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { IExecutor } from "../interfaces/IExecutor";
+import { ExecutionContract, ExecutionResult, Language } from "../types";
+import { assertSandboxPolicy } from "../config/execution";
+import { runtimeProgram } from "./runners";
+import { EXPIRY_GRACE_MS, SandboxOwnership } from "./sandboxLifecycle";
+import { logger, metrics } from "../telemetry";
 
-
-
-abstract class BaseExecutor implements IExecutor {
-  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> { //Template
-    const uniqueId = uuidv4();
-    const ext = this.getFileExtension();
-    const filePath = path.join('/tmp', `nexorithm-${uniqueId}.${ext}`);
-    const startTime = performance.now();
-
-    try {
-      fs.writeFileSync(filePath, code, 'utf8');
-      const command = this.getCommand(filePath);
-
-      const stdout = execSync(command, { // adapter pattern
-        input,
-        timeout: timeoutMs,
-        encoding: 'utf8',
-        maxBuffer: 1024 * 1024,
-        stdio: ['pipe', 'pipe', 'pipe'],
+export async function docker(
+  args: string[],
+  input = "",
+  limit = 1048576,
+  timeout = 15000,
+): Promise<{
+  stdout: string;
+  stderr: string;
+  code: number | null;
+  overflow: boolean;
+  timedOut: boolean;
+}> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("docker", args, {
+      shell: false,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = Buffer.alloc(0),
+      stderr = Buffer.alloc(0),
+      bytes = 0,
+      overflow = false,
+      timedOut = false;
+    const collect = (kind: "stdout" | "stderr", chunk: Buffer) => {
+      const available = Math.max(0, limit - bytes);
+      bytes += chunk.length;
+      if (kind === "stdout")
+        stdout = Buffer.concat([stdout, chunk.subarray(0, available)]);
+      else stderr = Buffer.concat([stderr, chunk.subarray(0, available)]);
+      if (bytes > limit) {
+        overflow = true;
+        child.kill("SIGKILL");
+      }
+    };
+    child.stdout.on("data", (b) => collect("stdout", b));
+    child.stderr.on("data", (b) => collect("stderr", b));
+    child.stdin.on("error", () => {
+      /* EPIPE when runtime exits early */
+    });
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeout);
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({
+        stdout: stdout.toString(),
+        stderr: stderr.toString(),
+        code,
+        overflow,
+        timedOut,
       });
+    });
+    child.stdin.end(input);
+  });
+}
 
-      const executionTimeMs = Math.round(performance.now() - startTime);
+function ownershipLabels(ownership?: SandboxOwnership) {
+  if (!ownership) return [];
+  if (!/^[a-f0-9]{24}$/.test(ownership.submissionId)) return [];
+  if (!Number.isInteger(ownership.attempt) || ownership.attempt < 1) return [];
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      ownership.leaseToken,
+    )
+  )
+    return [];
+  if (!/^[a-zA-Z0-9_.-]{1,128}$/.test(ownership.workerId)) return [];
+  return [
+    "--label",
+    `nexorithm.submission=${ownership.submissionId}`,
+    "--label",
+    `nexorithm.attempt=${ownership.attempt}`,
+    "--label",
+    `nexorithm.lease=${ownership.leaseToken}`,
+    "--label",
+    `nexorithm.worker=${ownership.workerId}`,
+  ];
+}
 
-      return {
-        stdout: stdout.trim(),
-        stderr: '',
-        exitCode: 0,
-        timedOut: false,
-        executionTimeMs,
-      };
-    } catch (error: unknown) {
-      const executionTimeMs = Math.round(performance.now() - startTime);
-      const execError = error as {
-        killed?: boolean;
-        signal?: string;
-        status?: number;
-        stderr?: string | Buffer;
-        stdout?: string | Buffer;
-        message?: string;
-      };
-
-      if (execError.killed || execError.signal === 'SIGTERM') {
+abstract class ContainerExecutor implements IExecutor {
+  constructor(private readonly language: Language) {}
+  async execute(
+    code: string,
+    input: string,
+    timeoutMs?: number,
+    contract?: ExecutionContract,
+    ownership?: SandboxOwnership,
+  ): Promise<ExecutionResult> {
+    const c = assertSandboxPolicy();
+    if (!contract) throw new Error("Explicit function contract required");
+    const name = `nx-${randomUUID()}`;
+    const timeout = timeoutMs ?? c.EXECUTION_TIMEOUT_MS;
+    const started = performance.now();
+    let created = false;
+    try {
+      const image =
+        this.language === Language.PYTHON ? c.PYTHON_IMAGE : c.JAVASCRIPT_IMAGE;
+      const command =
+        this.language === Language.PYTHON
+          ? ["python3", "-I", "-B", "-"]
+          : ["node", `--max-old-space-size=${c.EXECUTION_MEMORY_MB * 4}`, "-"];
+      const create = await docker([
+        "create",
+        "--pull=never",
+        "--name",
+        name,
+        "--label",
+        "nexorithm.sandbox=true",
+        "--label",
+        `nexorithm.created=${Date.now()}`,
+        "--label",
+        `nexorithm.expires=${Date.now() + timeout + EXPIRY_GRACE_MS}`,
+        ...ownershipLabels(ownership),
+        "--runtime",
+        c.SANDBOX_RUNTIME,
+        "--network=none",
+        "--user=65534:65534",
+        "--read-only",
+        "--tmpfs",
+        "/tmp:rw,noexec,nosuid,nodev,size=16777216,mode=1777",
+        "--workdir=/tmp",
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges:true",
+        "--pids-limit",
+        String(c.EXECUTION_PIDS),
+        "--memory",
+        `${c.EXECUTION_MEMORY_MB}m`,
+        "--memory-swap",
+        `${c.EXECUTION_MEMORY_MB}m`,
+        "--cpus",
+        String(c.EXECUTION_CPUS),
+        "--ulimit",
+        "fsize=16777216:16777216",
+        "--ulimit",
+        "nofile=64:64",
+        "--log-driver=none",
+        "-i",
+        image,
+        "timeout",
+        "--signal=KILL",
+        `${Math.ceil(timeout / 1000) + 2}s`,
+        ...command,
+      ]);
+      if (create.code !== 0) throw new Error("Sandbox creation failed");
+      created = true;
+      metrics.sandboxStartup.observe((performance.now() - started) / 1000);
+      const runStart = performance.now();
+      const result = await docker(
+        ["start", "-a", "-i", name],
+        runtimeProgram(this.language, code, input, contract),
+        c.EXECUTION_MAX_OUTPUT,
+        timeout,
+      );
+      // Killing docker attach does not kill the container: force removal below is mandatory.
+      if (result.timedOut || result.overflow) {
+        const inspection = await docker([
+          "inspect",
+          "--format",
+          "{{json .State}}",
+          name,
+        ]);
+        const killed =
+          inspection.code === 0 &&
+          Boolean(
+            (JSON.parse(inspection.stdout) as { OOMKilled?: boolean })
+              .OOMKilled,
+          );
+        const removed = await docker(["rm", "-f", name]);
+        if (removed.code !== 0) throw new Error("Sandbox termination failed");
+        created = false;
         return {
-          stdout: '',
-          stderr: 'Time Limit Exceeded',
-          exitCode: 1,
-          timedOut: true,
-          executionTimeMs,
+          stdout: result.stdout,
+          stderr: "",
+          exitCode: null,
+          timedOut: result.timedOut && !result.overflow && !killed,
+          outputLimitExceeded: result.overflow,
+          memoryLimitExceeded: killed,
+          executionTimeMs: Math.round(performance.now() - runStart),
         };
       }
-
+      const inspection = await docker([
+        "inspect",
+        "--format",
+        "{{json .State}}",
+        name,
+      ]);
+      if (inspection.code !== 0) throw new Error("Sandbox inspection failed");
+      const state = JSON.parse(inspection.stdout) as {
+        ExitCode: number;
+        OOMKilled: boolean;
+        Error: string;
+      };
+      const heapExhausted = /heap out of memory|Reached heap limit/i.test(
+        result.stderr,
+      );
       return {
-        stdout: String(execError.stdout ?? '').trim(),
-        stderr: String(execError.stderr ?? execError.message ?? 'Unknown error').trim(),
-        exitCode: execError.status ?? 1,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: state.ExitCode,
         timedOut: false,
-        executionTimeMs,
+        memoryLimitExceeded: state.OOMKilled || heapExhausted,
+        compilationError: state.ExitCode === 42,
+        infrastructureError: Boolean(state.Error),
+        executionTimeMs: Math.round(performance.now() - runStart),
       };
     } finally {
-      try {
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+      if (created) {
+        const removed = await docker(["rm", "-f", name]);
+        if (removed.code !== 0) {
+          metrics.cleanupFailures.inc();
+          logger.error({ operation: "sandbox_cleanup", sandbox: name });
+          throw new Error("Sandbox cleanup failed");
         }
-      } catch {
-        
       }
     }
   }
-
-  protected abstract getCommand(filePath: string): string;
-  protected abstract getFileExtension(): string;
 }
-
-
-
-export class JavascriptExecutor extends BaseExecutor {
-  protected getCommand(filePath: string): string {
-    return `node "${filePath}"`;
-  }
-
-  protected getFileExtension(): string {
-    return 'js';
-  }
-
-  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
-    const runnerCode = `
-${code}
-
-const fs = require('fs');
-function __main__() {
-    const inputStr = fs.readFileSync(0, 'utf-8').trim();
-    if (!inputStr) return;
-    const lines = inputStr.split('\\n');
-    let args = lines.map(line => {
-        try { return JSON.parse(line); } catch(e) { return line; }
-    });
-    
-    // Find the user's function
-    let funcName = null;
-    const varMatch = ${JSON.stringify(code)}.match(/var\\s+([a-zA-Z0-9_]+)\\s*=\\s*function/);
-    const fnMatch = ${JSON.stringify(code)}.match(/function\\s+([a-zA-Z0-9_]+)/);
-    
-    if (varMatch && varMatch[1]) {
-        funcName = varMatch[1];
-    } else if (fnMatch && fnMatch[1]) {
-        funcName = fnMatch[1];
-    }
-    
-    if (funcName && typeof eval(funcName) === 'function') {
-        const result = eval(funcName)(...args);
-        if (result !== undefined) {
-             console.log(JSON.stringify(result).replace(/\\s/g, ''));
-        }
-    } else {
-        console.error("Could not find the solution function.");
-    }
-}
-__main__();
-`;
-    return super.execute(runnerCode, input, timeoutMs);
+export class PythonExecutor extends ContainerExecutor {
+  constructor() {
+    super(Language.PYTHON);
   }
 }
-
-export class PythonExecutor extends BaseExecutor {
-  protected getCommand(filePath: string): string {
-    return `python3 "${filePath}"`;
-  }
-
-  protected getFileExtension(): string {
-    return 'py';
-  }
-
-  async execute(code: string, input: string, timeoutMs = 5000): Promise<ExecutionResult> {
-    const runnerCode = `
-import sys
-import json
-
-${code}
-
-if __name__ == '__main__':
-    input_str = sys.stdin.read().strip()
-    if not input_str:
-        sys.exit(0)
-    lines = input_str.split('\\n')
-    args = []
-    for line in lines:
-        try:
-            args.append(json.loads(line))
-        except Exception:
-            args.append(line)
-            
-    try:
-        sol = Solution()
-        methods = [m for m in dir(sol) if not m.startswith('__')]
-        if not methods:
-            print("No methods found in Solution class.", file=sys.stderr)
-            sys.exit(1)
-        
-        # Get the defined function
-        func = getattr(sol, methods[-1])
-        result = func(*args)
-        if result is not None:
-            # Format python lists and dicts natively back as JSON output 
-            output = json.dumps(result, separators=(',', ':'))
-            # Boolean conversions for exact string match
-            output = output.replace('true', 'true').replace('false', 'false')
-            print(output)
-    except NameError:
-        print("Solution class not found.", file=sys.stderr)
-        sys.exit(1)
-`;
-    return super.execute(runnerCode, input, timeoutMs);
+export class JavascriptExecutor extends ContainerExecutor {
+  constructor() {
+    super(Language.JAVASCRIPT);
   }
 }
-
-
-
 export class ExecutorFactory {
-  private static readonly executors: Map<Language, IExecutor> = new Map<Language, IExecutor>([
-    [Language.JAVASCRIPT, new JavascriptExecutor()],
-    [Language.PYTHON, new PythonExecutor()],
-  ]);
-
   static getExecutor(language: Language): IExecutor {
-    const executor = this.executors.get(language);
-    if (!executor) {
-      throw new AppError(`Unsupported language: ${language}`, 400);
-    }
-    return executor;
+    if (language === Language.PYTHON) return new PythonExecutor();
+    if (language === Language.JAVASCRIPT) return new JavascriptExecutor();
+    throw new Error("Unsupported language");
   }
-
   static getSupportedLanguages(): Language[] {
-    return Array.from(this.executors.keys());
+    return [Language.PYTHON, Language.JAVASCRIPT];
   }
 }

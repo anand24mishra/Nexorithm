@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authState";
 import { authApi } from "../api/authApi";
 
 // Google Identity Services types
@@ -9,8 +9,8 @@ declare global {
     google?: {
       accounts: {
         id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement, config: any) => void;
+          initialize: (config: Record<string, unknown>) => void;
+          renderButton: (element: HTMLElement, config: Record<string, unknown>) => void;
           prompt: () => void;
         };
       };
@@ -29,6 +29,22 @@ export function LoginPage() {
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  const handleGoogleCallback = useCallback(
+    async (response: { credential: string }) => {
+      setError("");
+      setLoading(true);
+      try {
+        await googleLogin(response.credential);
+        navigate("/dashboard");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Google login failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [googleLogin, navigate],
+  );
 
   // Initialize Google Identity Services and render the standard Google button
   useEffect(() => {
@@ -65,21 +81,7 @@ export function LoginPage() {
       }, 100);
       return () => clearInterval(interval);
     }
-  }, []);
-
-  // Handle the Google credential response
-  const handleGoogleCallback = async (response: any) => {
-    setError("");
-    setLoading(true);
-    try {
-      await googleLogin(response.credential);
-      navigate("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Google login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [handleGoogleCallback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,8 +91,8 @@ export function LoginPage() {
       const res = await authApi.login(email, password);
       login(res.token, res.user.username);
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Login failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }

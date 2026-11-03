@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { DashboardService } from '../services/dashboard.service';
+import { Request, Response, NextFunction } from "express";
+import { DashboardService } from "../services/dashboard.service";
 
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
@@ -7,14 +7,15 @@ export class DashboardController {
   getDashboardData = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     try {
       const userId =
         (req as Request & { user?: { userId: string } }).user?.userId ??
-        'anonymous';
+        "anonymous";
 
-      const dashboardData = await this.dashboardService.getDashboardData(userId);
+      const dashboardData =
+        await this.dashboardService.getDashboardData(userId);
       res.status(200).json(dashboardData);
     } catch (error) {
       next(error);

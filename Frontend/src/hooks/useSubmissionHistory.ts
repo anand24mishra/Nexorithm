@@ -1,30 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { submissionHistoryApi } from '../api/submissionHistoryApi';
 import type { Submission } from '../types';
-
 export function useSubmissionHistory(problemId?: string) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchSubmissions = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = problemId
-        ? await submissionHistoryApi.getSubmissionsByProblem(problemId)
-        : await submissionHistoryApi.getSubmissions();
-      setSubmissions(data);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load submissions');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [problemId]);
-
+  const [page, setPage] = useState(1), [totalPages, setTotalPages] = useState(0), [revision, setRevision] = useState(0);
+  const refresh = useCallback(() => setRevision(v => v + 1), []);
   useEffect(() => {
-    fetchSubmissions();
-  }, [fetchSubmissions]);
-
-  return { submissions, isLoading, error, refresh: fetchSubmissions };
+    const controller = new AbortController();
+    void submissionHistoryApi.getPage(page, problemId, controller.signal).then(data => {
+      if (!controller.signal.aborted) { setSubmissions(data.submissions); setTotalPages(data.totalPages); setError(null); }
+    }).catch(err => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Could not load history'); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    window.addEventListener('submission-updated', refresh);
+    return () => { controller.abort(); window.removeEventListener('submission-updated', refresh); };
+  }, [page, problemId, revision, refresh]);
+  return { submissions, isLoading, error, refresh, page, totalPages, setPage };
 }

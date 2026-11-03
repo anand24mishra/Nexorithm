@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
+import '../../monaco';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 import { useSubmission } from '../../hooks/useSubmission';
 import { LanguageSelector } from './LanguageSelector';
 import { Modal } from '../common/Modal';

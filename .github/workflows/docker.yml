@@ -1,47 +1,45 @@
-name: Docker CI/CD (ECR + ECS)
-
+name: Versioned container images
 on:
-  push:
-    branches:
-      - main
-
-env:
-  AWS_REGION: ap-south-1
-  ECR_REPOSITORY: nexorithm-backend   
-  ECS_CLUSTER: default               
-  ECS_SERVICE: backend               
-
+  workflow_run:
+    workflows: [Quality]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+  packages: write
 jobs:
-  build-and-deploy:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        include:
+          - name: api
+            context: Backend
+            target: production
+          - name: worker
+            context: Backend
+            target: worker
+          - name: frontend
+            context: Frontend
+            target: ''
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build Docker image
-        run: |
-          docker build -t $ECR_REPOSITORY -f Backend/Dockerfile Backend
-          docker tag $ECR_REPOSITORY:latest ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
-
-      - name: Push image to ECR
-        run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
-
-      # - name: Deploy to ECS
-      #   run: |
-      #     aws ecs update-service \
-      #       --cluster $ECS_CLUSTER \
-      #       --service $ECS_SERVICE \
-      #       --force-new-deployment
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Repository image prefix
+        id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "prefix=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
+          push: true
+          tags: ${{ steps.image.outputs.prefix }}-${{ matrix.name }}:${{ github.event.workflow_run.head_sha }}

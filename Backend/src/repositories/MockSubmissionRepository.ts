@@ -1,6 +1,9 @@
-import { ISubmissionRepository, CreateSubmissionData } from '../interfaces/ISubmissionRepository';
-import { Submission } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  ISubmissionRepository,
+  CreateSubmissionData,
+} from "../interfaces/ISubmissionRepository";
+import { Submission } from "../types";
+import { randomUUID as uuidv4 } from "node:crypto";
 
 export class MockSubmissionRepository implements ISubmissionRepository {
   private submissions: Submission[] = [];
@@ -16,10 +19,15 @@ export class MockSubmissionRepository implements ISubmissionRepository {
   }
 
   async findByUser(userId: string): Promise<Submission[]> {
-    return this.submissions.filter((s) => s.userId === userId).sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
+    return this.submissions
+      .filter((s) => s.userId === userId)
+      .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
   }
 
-  async findByUserAndProblem(userId: string, problemId: string): Promise<Submission[]> {
+  async findByUserAndProblem(
+    userId: string,
+    problemId: string,
+  ): Promise<Submission[]> {
     return this.submissions
       .filter((s) => s.userId === userId && s.problemId === problemId)
       .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());

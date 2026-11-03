@@ -9,7 +9,7 @@ import {
   RecommendationCard,
 } from "../components/Dashboard";
 import { useDashboard } from "../hooks/useDashboard";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authState";
 
 export function Dashboard() {
   const navigate = useNavigate();
