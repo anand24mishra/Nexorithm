@@ -74,32 +74,6 @@ function StepCard({ num, title, desc }: { num: number; title: string; desc: stri
   );
 }
 
-/* ─── Stat ─── */
-function StatItem({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="landing-stat">
-      <span className="landing-stat-value">{value}</span>
-      <span className="landing-stat-label">{label}</span>
-    </div>
-  );
-}
-
-/* ─── Testimonial ─── */
-function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
-  return (
-    <div className="landing-testimonial">
-      <p className="landing-testimonial-quote">"{quote}"</p>
-      <div className="landing-testimonial-author">
-        <div className="landing-testimonial-avatar">{name[0]}</div>
-        <div>
-          <p className="landing-testimonial-name">{name}</p>
-          <p className="landing-testimonial-role">{role}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════════════
    LANDING PAGE
    ═══════════════════════════════════════════════════ */
@@ -124,7 +98,6 @@ export function LandingPage() {
           <div className="landing-nav-links">
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>
-            <a href="#testimonials">Community</a>
           </div>
           <div className="landing-nav-actions">
             <Link to="/login" className="landing-btn-ghost">Sign In</Link>
@@ -140,32 +113,24 @@ export function LandingPage() {
           <div className="landing-hero-text">
             <div className="landing-hero-badge">
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
-              Real-time Code Execution
+              Asynchronous judging
             </div>
             <h1>
-              Master Algorithms.<br />
-              <span className="landing-gradient-text">One Problem at a Time.</span>
+              Practice algorithms.<br />
+              <span className="landing-gradient-text">One problem at a time.</span>
             </h1>
             <p className="landing-hero-sub">
-              A production-grade competitive programming platform with an integrated code editor,
-              automated judging, and real-time feedback. Sharpen your skills with 2400+ curated problems.
+              Write JavaScript or Python in the browser. Submissions are queued
+              and judged in a separate worker. This is a local coding judge, not a public contest site.
             </p>
             <div className="landing-hero-cta">
               <Link to="/signup" className="landing-btn-primary landing-btn-lg">
-                Start Solving Now
+                Create an account
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
               </Link>
               <Link to="/login" className="landing-btn-outline landing-btn-lg">
                 Sign In
               </Link>
-            </div>
-            <div className="landing-hero-trust">
-              <div className="landing-hero-avatars">
-                {['A','R','S','M','K'].map((c,i)=>(
-                  <div key={i} className="landing-hero-avatar" style={{ zIndex: 5 - i }}>{c}</div>
-                ))}
-              </div>
-              <span>Join <strong>10,000+</strong> developers already practicing</span>
             </div>
           </div>
           <div className="landing-hero-visual">
@@ -188,16 +153,16 @@ export function LandingPage() {
       <section id="features" className="landing-section">
         <div className="landing-section-header">
           <span className="landing-section-tag">Features</span>
-          <h2>Everything You Need to <span className="landing-gradient-text">Level Up</span></h2>
-          <p>Professional-grade tools designed for serious competitive programmers.</p>
+          <h2>What this app <span className="landing-gradient-text">actually does</span></h2>
+          <p>Accounts, a code editor, and an asynchronous judge for your own submissions.</p>
         </div>
         <div className="landing-features-grid">
-          <FeatureCard icon="code" title="Monaco Code Editor" desc="Industry-standard editor with syntax highlighting, IntelliSense, and multiple language support." />
-          <FeatureCard icon="gavel" title="Automated Judging" desc="Submit solutions and get instant verdicts with detailed test case results and execution times." />
-          <FeatureCard icon="analytics" title="Performance Analytics" desc="Track your progress with detailed submission analytics, acceptance rates, and streak tracking." />
-          <FeatureCard icon="leaderboard" title="Global Leaderboard" desc="Compete with developers worldwide. Climb the ranks and showcase your algorithmic skills." />
-          <FeatureCard icon="category" title="2400+ Problems" desc="Curated problem set sourced from LeetCode covering arrays, DP, graphs, trees, and more." />
-          <FeatureCard icon="lock_open" title="Google OAuth" desc="Sign in seamlessly with your Google account. Secure JWT-based authentication out of the box." />
+          <FeatureCard icon="code" title="Monaco editor" desc="JavaScript and Python in the browser editor. Other languages are not wired up." />
+          <FeatureCard icon="gavel" title="Queued judging" desc="Submit returns immediately. The page polls until a separate worker writes the verdict." />
+          <FeatureCard icon="analytics" title="Your dashboard" desc="Solved count, acceptance, and streak are computed from your own saved submissions." />
+          <FeatureCard icon="history" title="Submission history" desc="Review your past runs. There is no public leaderboard." />
+          <FeatureCard icon="category" title="Seeded problems" desc="The repo ships a small built-in set. The list shows problems stored in the database, not a 2,400-problem catalog." />
+          <FeatureCard icon="lock_open" title="Sign-in" desc="Continue with Google, or create an account with email and password." />
         </div>
       </section>
 
@@ -205,43 +170,21 @@ export function LandingPage() {
       <section id="how-it-works" className="landing-section landing-section-alt">
         <div className="landing-section-header">
           <span className="landing-section-tag">How It Works</span>
-          <h2>Three Steps to <span className="landing-gradient-text">Mastery</span></h2>
-          <p>Get from zero to accepted in minutes.</p>
+          <h2>Three steps</h2>
+          <p>From the problem list to a stored verdict.</p>
         </div>
         <div className="landing-steps-grid">
-          <StepCard num={1} title="Pick a Problem" desc="Browse 2400+ curated problems filtered by difficulty, tags, and acceptance rate." />
-          <StepCard num={2} title="Write Your Solution" desc="Code in JavaScript or Python using our integrated Monaco editor with full IntelliSense." />
-          <StepCard num={3} title="Submit & Learn" desc="Get instant verdicts, view detailed test case results, and track your progress over time." />
-        </div>
-      </section>
-
-      {/* ── Stats ── */}
-      <section className="landing-stats-section">
-        <StatItem value="2,400+" label="Curated Problems" />
-        <StatItem value="10K+" label="Active Users" />
-        <StatItem value="50K+" label="Submissions Daily" />
-        <StatItem value="99.9%" label="Uptime" />
-      </section>
-
-      {/* ── Testimonials ── */}
-      <section id="testimonials" className="landing-section">
-        <div className="landing-section-header">
-          <span className="landing-section-tag">Community</span>
-          <h2>Loved by <span className="landing-gradient-text">Developers</span></h2>
-          <p>Hear from our community of competitive programmers.</p>
-        </div>
-        <div className="landing-testimonials-grid">
-          <TestimonialCard quote="The Monaco editor integration is flawless. It feels like coding in VS Code but for competitive programming." name="Alex Chen" role="Software Engineer @ Google" />
-          <TestimonialCard quote="Finally a platform that takes execution speed seriously. The automated judging is lightning fast." name="Priya Sharma" role="SDE Intern @ Amazon" />
-          <TestimonialCard quote="The analytics dashboard helped me identify my weak areas. I improved my acceptance rate by 40% in 2 months." name="Marcus Kim" role="CS Student @ Stanford" />
+          <StepCard num={1} title="Pick a problem" desc="Open a problem stored in the database. Filter the current list by difficulty, tag, or title." />
+          <StepCard num={2} title="Write a solution" desc="Use the Monaco editor. JavaScript and Python are the languages the judge accepts." />
+          <StepCard num={3} title="Submit and poll" desc="The API returns 202. This page asks for status until the worker records a verdict." />
         </div>
       </section>
 
       {/* ── CTA ── */}
       <section className="landing-cta">
         <div className="landing-cta-glow" />
-        <h2>Ready to Start Your Journey?</h2>
-        <p>Join thousands of developers mastering algorithms on Nexorithm.</p>
+        <h2>Create an account</h2>
+        <p>Registration stores a user in MongoDB. It does not join a public community.</p>
         <Link to="/signup" className="landing-btn-primary landing-btn-lg">
           Create Free Account
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
@@ -266,16 +209,8 @@ export function LandingPage() {
               <Link to="/login">Sign In</Link>
             </div>
             <div>
-              <h4>Resources</h4>
-              <a href="#">Documentation</a>
-              <a href="#">API Reference</a>
-              <a href="#">Support</a>
-            </div>
-            <div>
-              <h4>Connect</h4>
-              <a href="https://github.com/anand-242003/Nexorithm" target="_blank" rel="noreferrer">GitHub</a>
-              <a href="#">Discord</a>
-              <a href="#">Twitter</a>
+              <h4>Repository</h4>
+              <a href="https://github.com/anand24mishra/Nexorithm" target="_blank" rel="noreferrer">GitHub</a>
             </div>
           </div>
         </div>

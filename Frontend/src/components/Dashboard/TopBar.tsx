@@ -23,40 +23,16 @@ export function TopBar() {
             >
               Problems
             </Link>
-            <a
-              className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Contest
-            </a>
-            <a
-              className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Discuss
-            </a>
-            <a
-              className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Interview
-            </a>
-            <a
-              className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Store
-            </a>
           </nav>
         </div>
 
         <div className="flex items-center gap-4 relative">
-          <button className="text-[#D9C3AD] hover:bg-[#2A2A2A] p-2 rounded-lg transition-colors duration-200">
+          <button type="button" disabled title="Notifications are not available" className="text-[#D9C3AD] p-2 rounded-lg opacity-40 cursor-not-allowed">
             <span className="material-symbols-outlined icon-settings">
               notifications
             </span>
           </button>
-          <button className="text-[#D9C3AD] hover:bg-[#2A2A2A] p-2 rounded-lg transition-colors duration-200">
+          <button type="button" disabled title="Editor settings are available in a problem workspace" className="text-[#D9C3AD] p-2 rounded-lg opacity-40 cursor-not-allowed">
             <span className="material-symbols-outlined icon-settings">
               settings
             </span>

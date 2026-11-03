@@ -36,6 +36,22 @@ export class ProblemController {
     }
   };
 
+  getEditorial = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const slug = Array.isArray(req.params["slug"])
+        ? req.params["slug"][0]
+        : req.params["slug"];
+      const editorial = await this.problemService.getEditorial(slug as string);
+      res.status(200).json(editorial);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   getProblemBySlug = async (
     req: Request,
     res: Response,

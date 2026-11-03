@@ -8,6 +8,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { AuthProvider } from "../src/context/AuthContext";
 import { WorkspaceProvider } from "../src/context/WorkspaceContext";
 import { useWorkspace } from "../src/context/workspaceState";
 import { useSubmission } from "../src/hooks/useSubmission";
@@ -40,7 +41,7 @@ function Controls() {
   );
 }
 it("synchronously prevents duplicate submit clicks and clears busy on terminal result", async () => {
-  let release!: (value: { submissionId: string; status: "queued" }) => void;
+  let release!: (value: { mode: "queued"; submissionId: string }) => void;
   vi.mocked(submissionApi.submit).mockImplementation(
     () =>
       new Promise((resolve) => {
@@ -56,15 +57,17 @@ it("synchronously prevents duplicate submit clicks and clears busy on terminal r
     executionTimeMs: 1,
   } as Awaited<ReturnType<typeof submissionApi.get>>);
   render(
-    <WorkspaceProvider>
-      <Controls />
-    </WorkspaceProvider>,
+    <AuthProvider>
+      <WorkspaceProvider>
+        <Controls />
+      </WorkspaceProvider>
+    </AuthProvider>,
   );
   fireEvent.click(screen.getByText("Setup"));
   fireEvent.click(screen.getByText("Submit"));
   fireEvent.click(screen.getByText("Submit"));
   expect(submissionApi.submit).toHaveBeenCalledTimes(1);
-  await act(async () => release({ submissionId: "id", status: "queued" }));
+  await act(async () => release({ mode: "queued", submissionId: "id" }));
   await waitFor(() =>
     expect(screen.getByTestId("busy").textContent).toBe("false"),
   );

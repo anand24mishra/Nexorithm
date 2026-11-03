@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useWorkspace } from "../context/workspaceState";
+import { useAuth } from "../context/authState";
 import { submissionApi } from "../api/submissionApi";
 import { pollSubmission } from "./pollSubmission";
 import { Verdict } from "../types";
+
+const SIGN_IN = "Sign in to submit your code.";
+
 export function useSubmission() {
   const { state, dispatch, activeSubmission: active } = useWorkspace();
+  const { isAuthenticated } = useAuth();
   const pending = useRef<{ id: string; submit: boolean } | null>(null);
   useEffect(
     () => () => {
@@ -36,20 +41,35 @@ export function useSubmission() {
           type: "SUBMISSION_STATUS",
           payload: "Validating submission…",
         });
-        const id =
+        const ack =
           resume && pending.current
-            ? pending.current.id
-            : (
-                await submissionApi.submit(
-                  state.code,
-                  state.language,
-                  state.problemId,
-                  AbortSignal.any([
-                    controller.signal,
-                    AbortSignal.timeout(10000),
-                  ]),
-                )
-              ).submissionId;
+            ? { mode: "queued" as const, submissionId: pending.current.id }
+            : await submissionApi.submit(
+                state.code,
+                state.language,
+                state.problemId,
+                AbortSignal.any([
+                  controller.signal,
+                  AbortSignal.timeout(10000),
+                ]),
+              );
+        if (ack.mode === "result") {
+          dispatch({
+            type: submit ? "SUBMIT_SUCCESS" : "RUN_SUCCESS",
+            payload: ack.result,
+          });
+          pending.current = null;
+          window.dispatchEvent(new Event("submission-updated"));
+          return;
+        }
+        const id = ack.submissionId;
+        if (!id) {
+          throw new Error(
+            isAuthenticated
+              ? "Submission response did not include an id."
+              : SIGN_IN,
+          );
+        }
         pending.current = { id, submit };
         dispatch({
           type: "SUBMISSION_STATUS",
@@ -57,9 +77,9 @@ export function useSubmission() {
         });
         const row = await pollSubmission(
           id,
-          (id, signal) =>
+          (submissionId, signal) =>
             submissionApi.get(
-              id,
+              submissionId,
               AbortSignal.any([signal, AbortSignal.timeout(10000)]),
             ),
           controller.signal,
@@ -76,7 +96,11 @@ export function useSubmission() {
         };
         dispatch({
           type: submit ? "SUBMIT_SUCCESS" : "RUN_SUCCESS",
-          payload: { ...result, queueWaitMs: row.queueWaitMs },
+          payload: {
+            ...result,
+            results: result.results ?? [],
+            queueWaitMs: row.queueWaitMs,
+          },
         });
         pending.current = null;
         window.dispatchEvent(new Event("submission-updated"));
@@ -93,16 +117,37 @@ export function useSubmission() {
         if (active.current === controller) active.current = null;
       }
     },
-    [state.code, state.language, state.problemId, dispatch, active],
+    [
+      state.code,
+      state.language,
+      state.problemId,
+      dispatch,
+      active,
+      isAuthenticated,
+    ],
   );
   const retryStatus = useCallback(() => {
     if (pending.current) void perform(pending.current.submit, true);
   }, [perform]);
   useEffect(() => {
+    const onRun = () => {
+      void perform(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        void perform(false);
+      }
+    };
     window.addEventListener("retry-submission-status", retryStatus);
-    return () =>
+    window.addEventListener("nx-run-code", onRun);
+    window.addEventListener("keydown", onKey);
+    return () => {
       window.removeEventListener("retry-submission-status", retryStatus);
-  }, [retryStatus]);
+      window.removeEventListener("nx-run-code", onRun);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [retryStatus, perform]);
   return {
     runCode: () => perform(false),
     submitCode: () => perform(true),

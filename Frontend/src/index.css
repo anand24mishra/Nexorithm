@@ -48,6 +48,60 @@
 .problem-content li { margin-bottom: 4px; }
 .problem-content h3 { font-size: 13px; font-weight: 700; color: #e5e2e1; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
 
+.editorial { font-size: 14px; line-height: 1.75; color: #d9c3ad; }
+.editorial h2 { font-size: 18px; font-weight: 700; color: #e5e2e1; margin: 4px 0 14px; }
+.editorial h3 { font-size: 16px; font-weight: 700; color: #e5e2e1; margin: 22px 0 10px; text-transform: none; letter-spacing: normal; }
+.editorial p { margin: 0 0 12px; }
+.editorial .editorial-label { margin: 16px 0 6px; font-size: 14px; font-weight: 700; color: #e5e2e1; }
+.editorial ul { margin: 0 0 14px; padding-left: 20px; list-style: disc; }
+.editorial li { margin-bottom: 4px; }
+.editorial code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px;
+  color: #ffc78b;
+  background: #20201f;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.editorial hr { border: 0; border-top: 1px solid rgba(84, 68, 52, 0.35); margin: 18px 0; }
+.editorial-code {
+  margin: 12px 0 18px;
+  border: 1px solid rgba(84, 68, 52, 0.45);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+.editorial-code-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px 0;
+  background: #262320;
+  border-bottom: 1px solid rgba(84, 68, 52, 0.45);
+}
+.editorial-code-tabs button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #b5a898;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.editorial-code-tabs button.is-active { color: #e5e2e1; border-bottom-color: #ffa116; }
+.editorial-code pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: #1a1a1a;
+  color: #e5e2e1;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.editorial-code pre code { background: transparent; color: inherit; padding: 0; }
+
 /* Verdict badge */
 .verdict-accepted  { background: rgba(94,223,129,0.15); color: #5edf81; border: 1px solid rgba(94,223,129,0.3); }
 .verdict-wrong     { background: rgba(255,180,171,0.15); color: #ffb4ab; border: 1px solid rgba(255,180,171,0.3); }

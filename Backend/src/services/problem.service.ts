@@ -8,11 +8,27 @@ import {
 } from "../types";
 
 import { seedProblems } from "../data/seedProblems";
+import { buildEditorial, EditorialBlock } from "./editorial";
 export class ProblemService {
+  private readonly editorialCache = new Map<
+    string,
+    { at: number; blocks: EditorialBlock[] }
+  >();
+
   constructor(
     private readonly repo: IProblemRepository,
     private readonly externalApi: IExternalProblemApi,
   ) {}
+
+  async getEditorial(slug: string): Promise<{ blocks: EditorialBlock[] }> {
+    const cached = this.editorialCache.get(slug);
+    if (cached && Date.now() - cached.at < 10 * 60 * 1000) {
+      return { blocks: cached.blocks };
+    }
+    const editorial = await buildEditorial(slug, this.externalApi);
+    this.editorialCache.set(slug, { at: Date.now(), blocks: editorial.blocks });
+    return editorial;
+  }
 
   async getProblems(params: ProblemListParams): Promise<ProblemListResponse> {
     const page = params.page ?? 1;

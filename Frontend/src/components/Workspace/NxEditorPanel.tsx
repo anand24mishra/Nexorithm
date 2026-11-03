@@ -53,7 +53,7 @@ export function NxEditorPanel({ problem }: Props) {
       id: 'nx-run',
       label: 'Run / Submit',
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-      run: () => {  },
+      run: () => { window.dispatchEvent(new Event('nx-run-code')); },
     });
   };
 

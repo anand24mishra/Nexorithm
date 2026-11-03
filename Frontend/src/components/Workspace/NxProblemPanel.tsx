@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import type { NexorithmProblem } from '../../types';
 import { SubmissionHistory } from '../SubmissionHistory/SubmissionHistory';
 import { useWorkspace } from '../../context/workspaceState';
+import { EditorialArticle } from './EditorialArticle';
+import { fetchOfficialSolution, type EditorialBlock } from './officialSolution';
 
 interface Props {
   problem: NexorithmProblem;
@@ -26,13 +28,39 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
   }, [dispatch]);
 
   const isSubmissions = activeTab === 'submissions';
+  const isEditorial = activeTab === 'editorial';
+  const isSolutions = activeTab === 'solutions';
+  const showArticle = isEditorial || isSolutions;
+  const [articleBlocks, setArticleBlocks] = useState<EditorialBlock[]>([]);
+  const [articleError, setArticleError] = useState<string | null>(null);
+  const [articleLoading, setArticleLoading] = useState(false);
+  const [articleReady, setArticleReady] = useState(false);
+
+  useEffect(() => {
+    if (!showArticle) return;
+    const controller = new AbortController();
+    setArticleLoading(true);
+    setArticleReady(false);
+    setArticleError(null);
+    setArticleBlocks([]);
+    fetchOfficialSolution(problem.slug, controller.signal)
+      .then((blocks) => { if (!controller.signal.aborted) setArticleBlocks(blocks); })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setArticleError(error instanceof Error ? error.message : 'Editorial is unavailable right now.');
+      })
+      .finally(() => { if (!controller.signal.aborted) { setArticleLoading(false); setArticleReady(true); } });
+    return () => controller.abort();
+  }, [problem.slug, showArticle]);
+
+  const panelTitle = isSubmissions ? 'Submissions' : isEditorial ? 'Editorial' : isSolutions ? 'Solutions' : 'Description';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {}
       <div className="h-10 px-4 flex items-center border-b border-outline-variant/10 bg-surface flex-shrink-0">
         <span className="text-[11px] font-bold uppercase tracking-widest text-on-surface">
-          {isSubmissions ? 'Submissions' : 'Description'}
+          {panelTitle}
         </span>
       </div>
 
@@ -40,7 +68,28 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
       <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
         {}
-        {!isSubmissions && (
+        {showArticle && (
+          <div>
+            {articleLoading && (
+              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                <span className="spinner" /> {isEditorial ? 'Loading editorial…' : 'Loading solution…'}
+              </div>
+            )}
+            {articleError && <p className="text-sm text-error">{articleError}</p>}
+            {!articleLoading && !articleError && articleBlocks.length > 0 && (
+              <EditorialArticle blocks={articleBlocks} />
+            )}
+            {!articleLoading && articleReady && !articleError && articleBlocks.length === 0 && (
+              <p className="text-sm text-on-surface-variant">
+                {isEditorial
+                  ? 'No editorial is available for this problem.'
+                  : 'No solution is available for this problem.'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {!isSubmissions && !showArticle && (
           <>
             {}
             <div className="space-y-3">
