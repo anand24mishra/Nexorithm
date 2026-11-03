@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
+import '../../monaco';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 import { Language } from '../../types';
 import type { NexorithmProblem } from '../../types';
 import { Modal } from '../common/Modal';

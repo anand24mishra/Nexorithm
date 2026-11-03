@@ -1,19 +1,14 @@
 import type { Submission } from '../types';
-
 import { fetchWithAuth } from './authApi';
-
+export interface SubmissionPage { submissions: Submission[]; page: number; total: number; totalPages: number }
+async function page(path: string, pageNumber = 1, signal?: AbortSignal): Promise<SubmissionPage> {
+  const response = await fetchWithAuth(`${path}?page=${pageNumber}&limit=20`, { signal });
+  if (response.status === 401 || response.status === 403) return { submissions: [], page: pageNumber, total: 0, totalPages: 0 };
+  if (!response.ok) throw new Error('Could not load submission history. Please retry.');
+  return response.json();
+}
 export const submissionHistoryApi = {
-  getSubmissions: async (): Promise<Submission[]> => {
-    const response = await fetchWithAuth('/submissions');
-    if (response.status === 401 || response.status === 403) return [];
-    if (!response.ok) throw new Error('Failed to fetch submissions');
-    return response.json() as Promise<Submission[]>;
-  },
-
-  getSubmissionsByProblem: async (problemId: string): Promise<Submission[]> => {
-    const response = await fetchWithAuth(`/submissions/problem/${problemId}`);
-    if (response.status === 401 || response.status === 403) return [];
-    if (!response.ok) throw new Error('Failed to fetch problem submissions');
-    return response.json() as Promise<Submission[]>;
-  },
+  getPage: (pageNumber: number, problemId?: string, signal?: AbortSignal) => page(problemId ? `/submissions/problem/${encodeURIComponent(problemId)}` : '/submissions', pageNumber, signal),
+  getSubmissions: async () => (await page('/submissions')).submissions,
+  getSubmissionsByProblem: async (id: string) => (await page(`/submissions/problem/${encodeURIComponent(id)}`)).submissions,
 };

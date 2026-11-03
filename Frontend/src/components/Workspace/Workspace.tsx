@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 import { ProblemPanel } from './ProblemPanel';
 import { EditorPanel } from './EditorPanel';
 import { ConsolePanel } from './ConsolePanel';
@@ -31,21 +31,13 @@ export function Workspace({ problem }: Props) {
       ? problem.starterCode.javascript
       : problem.starterCode.python;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code: savedDraft ?? starterCode } });
-    
-  }, [problem.id]);
-
-  
-  useEffect(() => {
-    if (!state.problemId || state.problemId !== problem.id) return;
-    const lang = state.language;
-    const starterCode = lang === Language.JAVASCRIPT
-      ? problem.starterCode.javascript
-      : problem.starterCode.python;
-    const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    dispatch({ type: 'SET_CODE', payload: savedDraft ?? starterCode });
-    
-  }, [state.language]);
+    const code = savedDraft ?? starterCode;
+    if (state.problemId !== problem.id) {
+      dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code } });
+    } else {
+      dispatch({ type: 'SET_CODE', payload: code });
+    }
+  }, [dispatch, problem.id, problem.starterCode.javascript, problem.starterCode.python, state.language, state.problemId]);
 
   
   useEffect(() => {
@@ -62,9 +54,9 @@ export function Workspace({ problem }: Props) {
       prevResultId.current !== JSON.stringify(state.lastResult)
     ) {
       prevResultId.current = JSON.stringify(state.lastResult);
-      setShowConfetti(true);
+      const start = setTimeout(() => setShowConfetti(true), 0);
       const t = setTimeout(() => setShowConfetti(false), 5500);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(start); clearTimeout(t); };
     }
   }, [state.lastResult]);
 

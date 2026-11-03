@@ -1,6 +1,9 @@
-import { ISubmissionRepository, CreateSubmissionData } from '../interfaces/ISubmissionRepository';
-import { Submission } from '../types';
-import { SubmissionModel } from '../models/Submission.model';
+import {
+  ISubmissionRepository,
+  CreateSubmissionData,
+} from "../interfaces/ISubmissionRepository";
+import { Submission } from "../types";
+import { SubmissionModel } from "../models/Submission.model";
 
 export class MongoSubmissionRepository implements ISubmissionRepository {
   async create(data: CreateSubmissionData): Promise<Submission> {
@@ -24,14 +27,16 @@ export class MongoSubmissionRepository implements ISubmissionRepository {
   }
 
   async findByUser(userId: string): Promise<Submission[]> {
-    const docs = await SubmissionModel.find({ userId }).sort({ submittedAt: -1 }).lean();
+    const docs = await SubmissionModel.find({ userId })
+      .sort({ submittedAt: -1 })
+      .lean();
     return docs.map((d) => ({
       id: String(d._id),
       userId: String(d.userId),
       problemId: String(d.problemId),
-      language: d.language as Submission['language'],
+      language: d.language as Submission["language"],
       code: String(d.code),
-      verdict: d.verdict as Submission['verdict'],
+      verdict: d.verdict as Submission["verdict"],
       passedTestCases: Number(d.passedTestCases),
       totalTestCases: Number(d.totalTestCases),
       executionTimeMs: Number(d.executionTimeMs),
@@ -39,15 +44,20 @@ export class MongoSubmissionRepository implements ISubmissionRepository {
     }));
   }
 
-  async findByUserAndProblem(userId: string, problemId: string): Promise<Submission[]> {
-    const docs = await SubmissionModel.find({ userId, problemId }).sort({ submittedAt: -1 }).lean();
+  async findByUserAndProblem(
+    userId: string,
+    problemId: string,
+  ): Promise<Submission[]> {
+    const docs = await SubmissionModel.find({ userId, problemId })
+      .sort({ submittedAt: -1 })
+      .lean();
     return docs.map((d) => ({
       id: String(d._id),
       userId: String(d.userId),
       problemId: String(d.problemId),
-      language: d.language as Submission['language'],
+      language: d.language as Submission["language"],
       code: String(d.code),
-      verdict: d.verdict as Submission['verdict'],
+      verdict: d.verdict as Submission["verdict"],
       passedTestCases: Number(d.passedTestCases),
       totalTestCases: Number(d.totalTestCases),
       executionTimeMs: Number(d.executionTimeMs),
@@ -62,9 +72,9 @@ export class MongoSubmissionRepository implements ISubmissionRepository {
       id: String(d._id),
       userId: String(d.userId),
       problemId: String(d.problemId),
-      language: d.language as Submission['language'],
+      language: d.language as Submission["language"],
       code: String(d.code),
-      verdict: d.verdict as Submission['verdict'],
+      verdict: d.verdict as Submission["verdict"],
       passedTestCases: Number(d.passedTestCases),
       totalTestCases: Number(d.totalTestCases),
       executionTimeMs: Number(d.executionTimeMs),

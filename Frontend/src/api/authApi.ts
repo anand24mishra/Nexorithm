@@ -7,15 +7,18 @@ if (!rawApiBase) {
 export const API_BASE = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem('nx_token');
+  const legacy = localStorage.getItem('nx_token');
+  if (legacy) { sessionStorage.setItem('nx_token', legacy); localStorage.removeItem('nx_token'); }
+  return sessionStorage.getItem('nx_token');
 }
 
 export function setAuthToken(token: string): void {
-  localStorage.setItem('nx_token', token);
+  sessionStorage.setItem('nx_token', token);
 }
 
 export function removeAuthToken(): void {
   localStorage.removeItem('nx_token');
+  sessionStorage.removeItem('nx_token');
 }
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}, skipAuthRedirect = false): Promise<Response> {

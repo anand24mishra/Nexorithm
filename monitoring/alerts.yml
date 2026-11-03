@@ -1,0 +1,38 @@
+groups:
+  - name: nexorithm
+    rules:
+      - alert: ApiUnavailable
+        expr: up{job="api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: API metrics target is down
+      - alert: WorkerUnavailable
+        expr: up{job="worker"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: Judge worker metrics target is down
+      - alert: QueueBacklog
+        expr: max(nx_queue_depth) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Durable submission backlog is above 100
+      - alert: HighHttpErrorRate
+        expr: sum(rate(nx_http_requests_total{status=~"5.."}[5m])) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: API 5xx rate is above 1 request per second
+      - alert: ExcessiveExecutionTimeouts
+        expr: sum(rate(nx_verdicts_total{verdict="Time Limit Exceeded"}[5m])) > 0.2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Execution timeouts are above 0.2 verdicts per second

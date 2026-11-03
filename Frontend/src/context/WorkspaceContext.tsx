@@ -1,5 +1,6 @@
-import { createContext, useContext, useReducer } from 'react';
+import { useReducer, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { WorkspaceContext } from './workspaceState';
 import type { WorkspaceState, WorkspaceAction } from '../types';
 import { Language } from '../types';
 
@@ -18,12 +19,14 @@ const initialState: WorkspaceState = {
 
 function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
+    case 'SUBMISSION_STATUS':
+      return { ...state, consoleOutput: action.payload };
     case 'SET_CODE':
       return { ...state, code: action.payload };
     case 'SET_LANGUAGE':
       return { ...state, language: action.payload };
     case 'SET_PROBLEM':
-      return { ...state, problemId: action.payload.problemId, code: action.payload.code, lastResult: null, consoleOutput: '' };
+      return { ...state, problemId: action.payload.problemId, code: action.payload.code, lastResult: null, consoleOutput: '', isRunning: false, isSubmitting: false };
     case 'RUN_START':
       return { ...state, isRunning: true, isSubmitting: false, lastResult: null, consoleOutput: 'Running...', activeTab: 'result' };
     case 'RUN_SUCCESS':
@@ -43,31 +46,18 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'TOGGLE_FULLSCREEN':
       return { ...state, isFullscreen: !state.isFullscreen };
     case 'RESET_CODE':
-      return { ...state, code: action.payload, lastResult: null, consoleOutput: '' };
+      return { ...state, code: action.payload, lastResult: null, consoleOutput: '', isRunning: false, isSubmitting: false };
     default:
       return state;
   }
 }
 
-interface WorkspaceContextType {
-  state: WorkspaceState;
-  dispatch: React.Dispatch<WorkspaceAction>;
-}
-
-const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
-
-
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const activeSubmission = useRef<AbortController | null>(null);
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
   return (
-    <WorkspaceContext.Provider value={{ state, dispatch }}>
+    <WorkspaceContext.Provider value={{ state, dispatch, activeSubmission }}>
       {children}
     </WorkspaceContext.Provider>
   );
-}
-
-export function useWorkspace(): WorkspaceContextType {
-  const ctx = useContext(WorkspaceContext);
-  if (!ctx) throw new Error('useWorkspace must be used within WorkspaceProvider');
-  return ctx;
 }

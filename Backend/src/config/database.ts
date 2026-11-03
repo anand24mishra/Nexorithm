@@ -1,26 +1,14 @@
-import mongoose from 'mongoose';
-
-let isConnected = false;
-
+import mongoose from "mongoose";
+import { logger } from "../telemetry";
 export async function connectDatabase(uri: string): Promise<void> {
-  if (isConnected) {
-    console.log('Already connected to MongoDB');
-    return;
-  }
-
-  try {
-    await mongoose.connect(uri);// Singleton
-    isConnected = true;
-    console.log('Connected to MongoDB successfully');
-  } catch (error) {
-    console.error('Failed to connect to MongoDB:', error);
-    throw error;
-  }
+  if (mongoose.connection.readyState === 1) return;
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 10000,
+    maxPoolSize: 20,
+  });
+  logger.info({ operation: "database_connect", outcome: "connected" });
 }
-
 export async function disconnectDatabase(): Promise<void> {
-  if (!isConnected) return;
   await mongoose.disconnect();
-  isConnected = false;
-  console.log('Disconnected from MongoDB');
 }

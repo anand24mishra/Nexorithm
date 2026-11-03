@@ -1,13 +1,10 @@
-import { IExternalProblemApi } from '../../interfaces/IExternalProblemApi';
-import { ProblemListParams } from '../../types';
+import { IExternalProblemApi } from "../../interfaces/IExternalProblemApi";
+import { ProblemListParams } from "../../types";
 
-const VERCEL_BASE_URL = 'https://leetcode-api-pied.vercel.app';
-const LEETCODE_GRAPHQL_URL = 'https://leetcode.com/graphql';
-
+const VERCEL_BASE_URL = "https://leetcode-api-pied.vercel.app";
+const LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql";
 
 export class LeetCodeApiClient implements IExternalProblemApi {
-  
-
   async fetchFromVercel(slug: string): Promise<unknown> {
     const res = await fetch(`${VERCEL_BASE_URL}/problem/${slug}`);
     if (!res.ok) {
@@ -22,9 +19,9 @@ export class LeetCodeApiClient implements IExternalProblemApi {
     let url = `${VERCEL_BASE_URL}/problems?limit=${limit}&skip=${skip}`;
     if (params.difficulty) {
       const diffMap: Record<string, string> = {
-        easy: 'Easy',
-        medium: 'Medium',
-        hard: 'Hard',
+        easy: "Easy",
+        medium: "Medium",
+        hard: "Hard",
       };
       url += `&difficulty=${diffMap[params.difficulty] ?? params.difficulty}`;
     }
@@ -42,8 +39,6 @@ export class LeetCodeApiClient implements IExternalProblemApi {
     }
     return res.json();
   }
-
-  
 
   async fetchFromGraphQL(slug: string): Promise<unknown> {
     const query = `
@@ -65,10 +60,10 @@ export class LeetCodeApiClient implements IExternalProblemApi {
     `;
 
     const res = await fetch(LEETCODE_GRAPHQL_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Referer: 'https://leetcode.com',
+        "Content-Type": "application/json",
+        Referer: "https://leetcode.com",
       },
       body: JSON.stringify({
         query,
@@ -82,7 +77,7 @@ export class LeetCodeApiClient implements IExternalProblemApi {
 
     const json = (await res.json()) as { data?: { question?: unknown } };
     if (!json.data?.question) {
-      throw new Error('Problem not found via GraphQL');
+      throw new Error("Problem not found via GraphQL");
     }
     return json.data.question;
   }
