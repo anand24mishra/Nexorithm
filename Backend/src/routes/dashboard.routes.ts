@@ -1,15 +1,15 @@
-import { Router } from 'express';
-import { DashboardController } from '../controllers/dashboard.controller';
+import { Router, RequestHandler } from "express";
+import { DashboardController } from "../controllers/dashboard.controller";
 
 export function createDashboardRoutes(
   controller: DashboardController,
-  authMiddleware: any
+  authMiddleware: RequestHandler,
 ): Router {
   const router = Router();
 
   router.use(authMiddleware);
 
-  router.get('/', controller.getDashboardData);
+  router.get("/", controller.getDashboardData);
 
   return router;
 }

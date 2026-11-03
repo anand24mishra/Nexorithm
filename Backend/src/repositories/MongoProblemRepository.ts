@@ -1,25 +1,39 @@
-import { IProblemRepository } from '../interfaces/IProblemRepository';
-import { NexorithmProblem, ProblemListItem, ProblemListParams } from '../types';
-import { ProblemModel } from '../models/Problem.model';
+import { IProblemRepository } from "../interfaces/IProblemRepository";
+import { NexorithmProblem, ProblemListItem, ProblemListParams } from "../types";
+import { ProblemModel } from "../models/Problem.model";
 
 export class MongoProblemRepository implements IProblemRepository {
   async findAll(
-    params: ProblemListParams
+    params: ProblemListParams,
   ): Promise<{ problems: ProblemListItem[]; total: number }> {
     const filter: Record<string, unknown> = {};
 
     if (params.difficulty) {
-      filter['difficulty'] = params.difficulty;
+      filter["difficulty"] = params.difficulty;
     }
 
     if (params.tags && params.tags.length > 0) {
-      filter['tags'] = { $in: params.tags.map((t) => new RegExp(t, 'i')) };
+      filter["tags"] = {
+        $in: params.tags.map(
+          (t) => new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+        ),
+      };
     }
 
     if (params.search) {
-      filter['$or'] = [
-        { title: { $regex: params.search, $options: 'i' } },
-        { slug: { $regex: params.search, $options: 'i' } },
+      filter["$or"] = [
+        {
+          title: {
+            $regex: params.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            $options: "i",
+          },
+        },
+        {
+          slug: {
+            $regex: params.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            $options: "i",
+          },
+        },
       ];
     }
 
@@ -29,7 +43,7 @@ export class MongoProblemRepository implements IProblemRepository {
 
     const [docs, total] = await Promise.all([
       ProblemModel.find(filter)
-        .select('id slug title difficulty tags acRate')
+        .select("id slug title difficulty tags acRate")
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -40,7 +54,7 @@ export class MongoProblemRepository implements IProblemRepository {
       id: String(d.id),
       slug: String(d.slug),
       title: String(d.title),
-      difficulty: d.difficulty as ProblemListItem['difficulty'],
+      difficulty: d.difficulty as ProblemListItem["difficulty"],
       tags: d.tags as string[],
       acRate: Number(d.acRate ?? 0),
     }));
@@ -64,34 +78,38 @@ export class MongoProblemRepository implements IProblemRepository {
     await ProblemModel.findOneAndUpdate(
       { slug: problem.slug },
       { $set: problem },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" },
     );
   }
 
   private docToProblem(doc: Record<string, unknown>): NexorithmProblem {
-    const starterCode = (doc['starterCode'] as Record<string, string>) ?? {};
-    const testCases = (doc['testCases'] as Array<Record<string, unknown>>) ?? [];
+    const starterCode = (doc["starterCode"] as Record<string, string>) ?? {};
+    const testCases =
+      (doc["testCases"] as Array<Record<string, unknown>>) ?? [];
 
     return {
-      id: String(doc['id'] ?? ''),
-      slug: String(doc['slug'] ?? ''),
-      title: String(doc['title'] ?? ''),
-      difficulty: doc['difficulty'] as NexorithmProblem['difficulty'],
-      content: String(doc['content'] ?? ''),
-      tags: (doc['tags'] as string[]) ?? [],
+      execution: doc["execution"] as NexorithmProblem["execution"],
+      id: String(doc["id"] ?? ""),
+      slug: String(doc["slug"] ?? ""),
+      title: String(doc["title"] ?? ""),
+      difficulty: doc["difficulty"] as NexorithmProblem["difficulty"],
+      content: String(doc["content"] ?? ""),
+      tags: (doc["tags"] as string[]) ?? [],
       starterCode: {
-        javascript: String(starterCode['javascript'] ?? '// Write your solution here\n'),
-        python: String(starterCode['python'] ?? '# Write your solution here\n'),
+        javascript: String(
+          starterCode["javascript"] ?? "// Write your solution here\n",
+        ),
+        python: String(starterCode["python"] ?? "# Write your solution here\n"),
       },
       testCases: testCases.map((tc) => ({
-        input: String(tc['input'] ?? ''),
-        expectedOutput: String(tc['expectedOutput'] ?? ''),
-        isHidden: Boolean(tc['isHidden']),
+        input: String(tc["input"] ?? ""),
+        expectedOutput: String(tc["expectedOutput"] ?? ""),
+        isHidden: Boolean(tc["isHidden"]),
       })),
-      sampleInput: String(doc['sampleInput'] ?? ''),
-      sampleOutput: String(doc['sampleOutput'] ?? ''),
-      hints: (doc['hints'] as string[]) ?? [],
-      acRate: Number(doc['acRate'] ?? 0),
+      sampleInput: String(doc["sampleInput"] ?? ""),
+      sampleOutput: String(doc["sampleOutput"] ?? ""),
+      hints: (doc["hints"] as string[]) ?? [],
+      acRate: Number(doc["acRate"] ?? 0),
     };
   }
 }

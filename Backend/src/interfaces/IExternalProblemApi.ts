@@ -1,4 +1,4 @@
-import { ProblemListParams } from '../types';
+import { ProblemListParams } from "../types";
 
 export interface IExternalProblemApi {
   fetchFromVercel(slug: string): Promise<unknown>;

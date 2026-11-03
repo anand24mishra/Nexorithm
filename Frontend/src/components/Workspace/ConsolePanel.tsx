@@ -1,4 +1,5 @@
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { SubmissionStatus } from './SubmissionStatus';
+import { useWorkspace } from '../../context/workspaceState';
 import { VerdictBadge } from '../common/VerdictBadge';
 
 export function ConsolePanel() {
@@ -35,7 +36,7 @@ export function ConsolePanel() {
         </button>
       </div>
 
-      {}
+      <SubmissionStatus />
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px' }}>
         {state.activeTab === 'result' ? (
           <ResultView />
@@ -55,11 +56,11 @@ export function ConsolePanel() {
 function ResultView() {
   const { state } = useWorkspace();
 
-  if (state.isRunning) {
+  if (state.isRunning || state.isSubmitting) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '20px 0' }}>
         <span className="spinner" />
-        <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Running your code...</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{state.consoleOutput}</span>
       </div>
     );
   }

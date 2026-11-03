@@ -1,47 +1,36 @@
-import { IProblemRepository } from '../interfaces/IProblemRepository';
-import {
-  NexorithmProblem,
-  ProblemListItem,
-  ProblemListParams,
-  Difficulty,
-} from '../types';
-import { seedProblems } from '../data/seedProblems';
+import { IProblemRepository } from "../interfaces/IProblemRepository";
+import { NexorithmProblem, ProblemListItem, ProblemListParams } from "../types";
+import { seedProblems } from "../data/seedProblems";
 
 export class MockProblemRepository implements IProblemRepository {
   private problems: NexorithmProblem[] = [...seedProblems];
 
   async findAll(
-    params: ProblemListParams
+    params: ProblemListParams,
   ): Promise<{ problems: ProblemListItem[]; total: number }> {
     let filtered = [...this.problems];
 
-    
     if (params.difficulty) {
-      filtered = filtered.filter(
-        (p) => p.difficulty === params.difficulty
-      );
+      filtered = filtered.filter((p) => p.difficulty === params.difficulty);
     }
 
-    
     if (params.tags && params.tags.length > 0) {
       filtered = filtered.filter((p) =>
         params.tags!.some((tag) =>
-          p.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
-        )
+          p.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
+        ),
       );
     }
 
-    
     if (params.search) {
       const searchLower = params.search.toLowerCase();
       filtered = filtered.filter(
         (p) =>
           p.title.toLowerCase().includes(searchLower) ||
-          p.slug.toLowerCase().includes(searchLower)
+          p.slug.toLowerCase().includes(searchLower),
       );
     }
 
-    
     filtered = filtered.sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
     const total = filtered.length;

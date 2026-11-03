@@ -1,0 +1,81 @@
+name: Quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8.0.9
+        ports: ['27017:27017']
+      redis:
+        image: redis:7.4.3-alpine
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: npm
+          cache-dependency-path: |
+            Backend/package-lock.json
+            Frontend/package-lock.json
+      - run: npm ci
+        working-directory: Backend
+      - run: npm ci
+        working-directory: Frontend
+      - name: Backend checks
+        working-directory: Backend
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          npm test
+          npm run build
+          npm audit --audit-level=high
+      - name: Integration checks
+        working-directory: Backend
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/nexorithm_test
+          REDIS_URL: redis://127.0.0.1:6379/15
+        run: npm run test:integration
+      - name: Frontend checks
+        working-directory: Frontend
+        env:
+          VITE_API_BASE_URL: http://127.0.0.1:8000/api
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          npm test
+          npm run build
+          npm audit --audit-level=high
+      - name: Browser contract tests
+        working-directory: Frontend
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - name: Validate compose
+        env:
+          JWT_SECRET: ci-only-secret-do-not-use-for-deployment
+          METRICS_TOKEN: ci-only-metrics-token
+          GRAFANA_PASSWORD: ci-only-password
+        run: docker compose config --quiet
+      - name: Build API image
+        run: docker build --target production -t nexorithm-api:ci Backend
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: nexorithm-api:ci
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+      - name: Test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-results
+          path: Frontend/test-results

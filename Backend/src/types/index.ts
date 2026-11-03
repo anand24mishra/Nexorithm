@@ -1,30 +1,35 @@
-
-
 export enum Language {
-  JAVASCRIPT = 'javascript',
-  PYTHON = 'python',
+  JAVASCRIPT = "javascript",
+  PYTHON = "python",
 }
 
 export enum Verdict {
-  ACCEPTED = 'Accepted',
-  WRONG_ANSWER = 'Wrong Answer',
-  RUNTIME_ERROR = 'Runtime Error',
-  TIME_LIMIT_EXCEEDED = 'Time Limit Exceeded',
-  COMPILE_ERROR = 'Compile Error',
+  ACCEPTED = "Accepted",
+  WRONG_ANSWER = "Wrong Answer",
+  RUNTIME_ERROR = "Runtime Error",
+  TIME_LIMIT_EXCEEDED = "Time Limit Exceeded",
+  COMPILE_ERROR = "Compile Error",
+  MEMORY_LIMIT_EXCEEDED = "Memory Limit Exceeded",
+  OUTPUT_LIMIT_EXCEEDED = "Output Limit Exceeded",
+  SYSTEM_ERROR = "System Error",
+  CANCELLED = "Cancelled",
 }
 
 export enum Difficulty {
-  EASY = 'easy',
-  MEDIUM = 'medium',
-  HARD = 'hard',
+  EASY = "easy",
+  MEDIUM = "medium",
+  HARD = "hard",
 }
-
-
 
 export interface ExecutionResult {
   stdout: string;
   stderr: string;
-  exitCode: number;
+  exitCode: number | null;
+  signal?: string | null;
+  memoryLimitExceeded?: boolean;
+  outputLimitExceeded?: boolean;
+  infrastructureError?: boolean;
+  compilationError?: boolean;
   timedOut: boolean;
   executionTimeMs: number;
 }
@@ -46,8 +51,6 @@ export interface JudgeResult {
   totalExecutionTimeMs: number;
 }
 
-
-
 export interface TestCase {
   input: string;
   expectedOutput: string;
@@ -66,6 +69,7 @@ export interface NexorithmProblem {
   difficulty: Difficulty;
   content: string;
   tags: string[];
+  execution?: ExecutionContract;
   starterCode: StarterCode;
   testCases: TestCase[];
   sampleInput: string;
@@ -98,8 +102,6 @@ export interface ProblemListResponse {
   totalPages: number;
 }
 
-
-
 export interface SubmissionRequest {
   code: string;
   language: Language;
@@ -127,9 +129,18 @@ export interface Submission {
   totalTestCases: number;
   executionTimeMs: number;
   submittedAt: Date;
+  status?: SubmissionStatus;
+  queuedAt?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  queueWaitMs?: number;
+  workerAttempt?: number;
+  leaseToken?: string;
+  leaseExpiresAt?: Date;
+  result?: SubmissionResponse;
+  errorCategory?: string;
+  requestId?: string;
 }
-
-
 
 export interface RegisterRequest {
   username: string;
@@ -154,10 +165,8 @@ export interface AuthResponse {
 export interface JwtPayload {
   userId: string;
   username: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
 }
-
-
 
 export interface AppConfig {
   port: number;
@@ -183,7 +192,7 @@ export interface DashboardStats {
 export interface DashboardRecentSubmission {
   id: string;
   title: string;
-  status: 'ACCEPTED' | 'WRONG ANSWER' | 'TLE';
+  status: "ACCEPTED" | "WRONG ANSWER" | "TLE";
   timestamp: string;
   language: string;
 }
@@ -191,7 +200,7 @@ export interface DashboardRecentSubmission {
 export interface DashboardRecommendation {
   id: string;
   title: string;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  difficulty: "EASY" | "MEDIUM" | "HARD";
   tags: string[];
   acceptance: number;
 }
@@ -201,4 +210,13 @@ export interface DashboardData {
   activityData: number[][];
   recentSubmissions: DashboardRecentSubmission[];
   recommendations: DashboardRecommendation[];
+}
+
+export type SubmissionStatus =
+  "queued" | "running" | "completed" | "failed" | "cancelled";
+export interface ExecutionContract {
+  functionName: string;
+  inputMode?: "json-args" | "legacy-lines";
+  comparison?: "json" | "exact" | "trim" | "float";
+  tolerance?: number;
 }

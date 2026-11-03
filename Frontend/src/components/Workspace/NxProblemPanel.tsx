@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import DOMPurify from 'dompurify';
 import type { NexorithmProblem } from '../../types';
 import { SubmissionHistory } from '../SubmissionHistory/SubmissionHistory';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import { useWorkspace } from '../../context/workspaceState';
 
 interface Props {
   problem: NexorithmProblem;

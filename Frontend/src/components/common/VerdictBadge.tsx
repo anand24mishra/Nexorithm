@@ -5,6 +5,12 @@ const verdictConfig: Record<string, { className: string; icon: string }> = {
   [Verdict.WRONG_ANSWER]: { className: 'verdict-wrong', icon: '✗' },
   [Verdict.RUNTIME_ERROR]: { className: 'verdict-runtime', icon: '⚠' },
   [Verdict.TIME_LIMIT_EXCEEDED]: { className: 'verdict-tle', icon: '⏱' },
+  Queued: { className: 'verdict-tle', icon: '…' },
+  Running: { className: 'verdict-tle', icon: '…' },
+  [Verdict.MEMORY_LIMIT_EXCEEDED]: { className: 'verdict-runtime', icon: '⚠' },
+  [Verdict.OUTPUT_LIMIT_EXCEEDED]: { className: 'verdict-runtime', icon: '⚠' },
+  [Verdict.SYSTEM_ERROR]: { className: 'verdict-runtime', icon: '⚠' },
+  [Verdict.CANCELLED]: { className: 'verdict-runtime', icon: '–' },
   [Verdict.COMPILE_ERROR]: { className: 'verdict-wrong', icon: '⚠' },
 };
 
