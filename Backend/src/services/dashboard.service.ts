@@ -52,8 +52,8 @@ export class DashboardService {
       ? Number(((accepted.length / submissions.length) * 100).toFixed(1))
       : 0;
     const solved = solvedIds.size;
-    const globalRank = Math.max(1, 5000 - solved * 12);
-    const percentile = Number(Math.max(0.2, 25 - solved * 0.05).toFixed(1));
+    const globalRank = 0;
+    const percentile = 0;
 
     const sortedSubmissions = [...submissions].sort(
       (a, b) =>

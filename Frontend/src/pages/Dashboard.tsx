@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Flame, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Flame } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   TopBar,
@@ -109,18 +109,16 @@ export function Dashboard() {
               </div>
             </StatCard>
 
-            {/* Global Rank */}
             <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6 hover:border-[#ffa116]/40 transition-all flex flex-col items-center justify-center text-center">
               <span className="text-sm font-semibold text-[#D9C3AD] opacity-70 uppercase tracking-wider mb-4">
-                Global Rank
+                Problems stored
               </span>
               <div className="text-5xl font-bold text-[#ffa116] mb-2">
-                #{stats?.globalRank ?? 0}
+                {stats?.totalProblems ?? 0}
               </div>
-              <div className="flex items-center gap-1 text-emerald-400 text-sm">
-                <TrendingUp size={16} />
-                <span>Top {stats?.percentile ?? 0}% Worldwide</span>
-              </div>
+              <p className="text-sm text-[#D9C3AD]">
+                Count of problems in this database. There is no global rank.
+              </p>
             </div>
 
             {/* Acceptance Rate */}
@@ -211,12 +209,12 @@ export function Dashboard() {
             <div className="col-span-2 bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold">Recent Submissions</h2>
-                <a
-                  href="#"
+                <Link
+                  to="/submissions"
                   className="text-[#ffa116] hover:opacity-90 text-sm font-semibold uppercase tracking-wider"
                 >
                   View All
-                </a>
+                </Link>
               </div>
               <div className="space-y-3">
                 {recentSubmissions.map((submission) => (

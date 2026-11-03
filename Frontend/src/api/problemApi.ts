@@ -6,11 +6,13 @@ export const problemApi = {
     page = 1,
     limit = 20,
     difficulty?: string,
-    search?: string
+    search?: string,
+    tags?: string,
   ): Promise<ProblemListResponse> {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (difficulty) params.set('difficulty', difficulty);
     if (search) params.set('search', search);
+    if (tags) params.set('tags', tags);
     const res = await fetch(`${API_BASE}/problems?${params}`);
     if (!res.ok) throw new Error(`Failed to fetch problems: ${res.status}`);
     return (await res.json()) as ProblemListResponse;

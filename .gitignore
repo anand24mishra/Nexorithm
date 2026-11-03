@@ -1,4 +1,4 @@
-# Editor/IDE
+# Editor and OS
 .vscode/
 .idea/
 .DS_Store
@@ -9,20 +9,29 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# Node
+# Node, builds, caches
 node_modules/
 dist/
+dist-ssr/
+*.tsbuildinfo
+**/.vite/
+**/.cache/
+**/coverage/
 
-# Environment variables
+# Tests and browser output
+**/test-results/
+**/playwright-report/
+**/playwright/.cache/
+
+# Environment files. Examples stay tracked.
 .env
 .env.*
 !.env.example
+!**/.env.example
 
-# Build artifacts
-*.tsbuildinfo
-
-.env
+# Written by scripts/prepare-local.sh. Not a secret to commit.
 monitoring/metrics-token
-**/coverage/
-**/test-results/
-**/playwright-report/
+
+# Local benchmark dumps
+benchmarks/results/
+k6-output/

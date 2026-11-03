@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useProblem } from '../hooks/useProblem';
 import { useProblems } from '../hooks/useProblems';
 import { WorkspaceProvider } from '../context/WorkspaceContext';
@@ -11,12 +11,15 @@ import { useSubmission } from '../hooks/useSubmission';
 import { useAuth } from '../context/authState';
 import { Language } from '../types';
 import Confetti from 'react-confetti';
+import { Modal } from '../components/common/Modal';
 
 type SideTab = 'problem' | 'submissions' | 'editorial' | 'solutions';
 
 function WorkspaceShell() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const shellRef = useRef<HTMLDivElement>(null);
   const { problem, loading, error } = useProblem(slug ?? '');
   const { problems } = useProblems(1, undefined, undefined, 5000);
   const [sideTab, setSideTab] = useState<SideTab>('problem');
@@ -24,8 +27,12 @@ function WorkspaceShell() {
   const { runCode, submitCode, isRunning, isSubmitting } = useSubmission();
   const { isAuthenticated, username, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [browserFullscreen, setBrowserFullscreen] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const prevResult = useRef<string | null>(null);
+  const skipDraftReset = useRef(false);
 
   
   useEffect(() => {
@@ -35,13 +42,20 @@ function WorkspaceShell() {
       ? problem.starterCode.python
       : problem.starterCode.javascript;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    const code = savedDraft ?? starterCode;
+    const restored = (location.state as { code?: unknown } | null)?.code;
+    const restoring = typeof restored === 'string' && state.problemId !== problem.id;
+    if (!restoring && skipDraftReset.current) {
+      skipDraftReset.current = false;
+      return;
+    }
+    const code = restoring ? restored : (savedDraft ?? starterCode);
+    if (restoring) skipDraftReset.current = true;
     if (state.problemId !== problem.id) {
       dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code } });
     } else {
       dispatch({ type: 'SET_CODE', payload: code });
     }
-  }, [dispatch, problem, state.language, state.problemId]);
+  }, [dispatch, location.state, problem, state.language, state.problemId]);
 
   useEffect(() => {
     if (!state.problemId || !state.code) return;
@@ -73,6 +87,19 @@ function WorkspaceShell() {
     if (idx >= 0 && idx < problems.length - 1) navigate(`/problem/${problems[idx + 1].slug}`);
   }, [problem, problems, navigate]);
 
+  useEffect(() => {
+    const sync = () => setBrowserFullscreen(document.fullscreenElement === shellRef.current);
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void shell.requestFullscreen().catch(() => dispatch({ type: 'TOGGLE_FULLSCREEN' }));
+  }, [dispatch]);
+
   const sideNav: { id: SideTab; icon: string; label: string }[] = [
     { id: 'problem', icon: 'description', label: 'Problem' },
     { id: 'submissions', icon: 'history', label: 'Submits' },
@@ -81,7 +108,7 @@ function WorkspaceShell() {
   ];
 
   return (
-    <div className="bg-background text-on-surface font-body overflow-hidden h-screen flex flex-col">
+    <div ref={shellRef} className={`bg-background text-on-surface font-body overflow-hidden h-screen flex flex-col ${state.isFullscreen ? 'fixed inset-0 z-[80]' : ''}`}>
       {showConfetti && (
         <div className="fixed inset-0 z-[9999] pointer-events-none">
           <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={600} gravity={0.22} />
@@ -131,14 +158,43 @@ function WorkspaceShell() {
             {isSubmitting ? <span className="flex items-center gap-1.5"><span className="spinner" /> Submitting…</span> : '✓  Submit'}
           </button>
           <div className="flex items-center gap-1 ml-1 relative">
-            <button className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all" title="Settings">
+            <button
+              type="button"
+              onClick={() => { setShowSettings((open) => !open); setShowProfileMenu(false); }}
+              className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all"
+              title="Settings"
+              aria-expanded={showSettings}
+            >
               <span className="material-symbols-outlined">settings</span>
             </button>
+            {showSettings && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-high rounded-xl border border-outline-variant/20 shadow-xl p-3 z-50 space-y-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Language</p>
+                  <div className="flex gap-1">
+                    <button type="button" className={`px-2 py-1 rounded text-xs ${state.language === Language.JAVASCRIPT ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-surface-container-highest text-on-surface-variant'}`} onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: Language.JAVASCRIPT })}>JavaScript</button>
+                    <button type="button" className={`px-2 py-1 rounded text-xs ${state.language === Language.PYTHON ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-surface-container-highest text-on-surface-variant'}`} onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: Language.PYTHON })}>Python</button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Font size</p>
+                  <div className="flex items-center justify-between">
+                    <button type="button" className="px-2 py-1 rounded hover:bg-surface-container-highest" onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize - 1 })}>A-</button>
+                    <span className="text-xs font-mono">{state.fontSize}px</span>
+                    <button type="button" className="px-2 py-1 rounded hover:bg-surface-container-highest" onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize + 1 })}>A+</button>
+                  </div>
+                </div>
+                <button type="button" className="w-full text-left text-xs font-semibold text-on-surface-variant hover:text-on-surface" onClick={() => { setShowSettings(false); setShowReset(true); }} disabled={!problem}>Reset code</button>
+              </div>
+            )}
             <button
+              type="button"
+              onClick={toggleFullscreen}
               className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all"
               title="Toggle fullscreen"
+              aria-pressed={browserFullscreen || state.isFullscreen}
             >
-              <span className="material-symbols-outlined">fullscreen</span>
+              <span className="material-symbols-outlined">{browserFullscreen || state.isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
             </button>
             {isAuthenticated ? (
               <div className="relative ml-1">
@@ -231,7 +287,7 @@ function WorkspaceShell() {
 
           {}
           <section className="col-span-1 lg:col-span-3 min-h-[320px] lg:min-h-0 bg-surface-container-low flex flex-col overflow-hidden">
-            <NxTestPanel />
+            <NxTestPanel sampleInput={problem?.sampleInput} sampleOutput={problem?.sampleOutput} />
           </section>
         </main>
       </div>
@@ -250,6 +306,19 @@ function WorkspaceShell() {
           </div>
         </div>
       )}
+      <Modal
+        isOpen={showReset}
+        title="Reset Code"
+        message="Reset to the starter code? Your current code will be deleted."
+        onConfirm={() => {
+          if (!problem) return;
+          const starter = state.language === Language.PYTHON ? problem.starterCode.python : problem.starterCode.javascript;
+          localStorage.removeItem(`nexorithm-draft-${problem.id}-${state.language}`);
+          dispatch({ type: 'RESET_CODE', payload: starter });
+          setShowReset(false);
+        }}
+        onCancel={() => setShowReset(false)}
+      />
     </div>
   );
 }

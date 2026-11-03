@@ -1,4 +1,7 @@
-import { IExternalProblemApi } from "../../interfaces/IExternalProblemApi";
+import {
+  IExternalProblemApi,
+  PlaygroundSnippet,
+} from "../../interfaces/IExternalProblemApi";
 import { ProblemListParams } from "../../types";
 
 const VERCEL_BASE_URL = "https://leetcode-api-pied.vercel.app";
@@ -80,5 +83,37 @@ export class LeetCodeApiClient implements IExternalProblemApi {
       throw new Error("Problem not found via GraphQL");
     }
     return json.data.question;
+  }
+
+  async fetchPlayground(uuid: string): Promise<PlaygroundSnippet[]> {
+    if (!/^[A-Za-z0-9]{4,32}$/.test(uuid)) return [];
+    const query = `
+      query playground($uuid: String!) {
+        playground(uuid: $uuid) {
+          playgroundcodeSet { code langSlug }
+        }
+      }
+    `;
+    const res = await fetch(LEETCODE_GRAPHQL_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Referer: "https://leetcode.com",
+      },
+      body: JSON.stringify({ query, variables: { uuid } }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      throw new Error(`Playground error: ${res.status}`);
+    }
+    const json = (await res.json()) as {
+      data?: {
+        playground?: { playgroundcodeSet?: PlaygroundSnippet[] } | null;
+      };
+    };
+    const rows = json.data?.playground?.playgroundcodeSet ?? [];
+    return rows.filter(
+      (row) => typeof row?.code === "string" && typeof row?.langSlug === "string",
+    );
   }
 }

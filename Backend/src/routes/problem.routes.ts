@@ -6,6 +6,7 @@ export function createProblemRoutes(controller: ProblemController): Router {
 
   router.post("/seed", controller.seedProblems);
   router.get("/daily-challenge", controller.getDailyChallenge);
+  router.get("/:slug/editorial", controller.getEditorial);
   router.get("/:slug", controller.getProblemBySlug);
   router.get("/", controller.getProblems);
 

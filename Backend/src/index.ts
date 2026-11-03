@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import path from "node:path";
 dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 import { loadConfig } from "./config";
 import { connectDatabase } from "./config/database";
@@ -45,7 +47,10 @@ export async function bootstrap(): Promise<void> {
   app.use(helmet());
   app.use(
     cors({
-      origin: (process.env.CORS_ORIGINS ?? "http://localhost:5173").split(","),
+      origin: (process.env.CORS_ORIGINS ?? "http://localhost:5173")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
     }),
   );
   app.use(express.json({ limit: "80kb" }));

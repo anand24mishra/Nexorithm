@@ -9,6 +9,7 @@ export async function pollSubmission(
   interval = 1500,
   maxWait = 180000,
 ): Promise<Submission> {
+  if (!id) throw new Error("Sign in to submit your code.");
   const start = Date.now();
   let errors = 0;
   while (Date.now() - start < maxWait) {

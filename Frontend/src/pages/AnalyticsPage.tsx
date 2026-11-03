@@ -70,13 +70,14 @@ export function AnalyticsPage() {
     );
   }
 
-  const acceptedSubs = submissions.filter((s) => s.verdict === "Accepted");
+  const currentSubmissions = Array.isArray(submissions) ? submissions : [];
+  const acceptedSubs = currentSubmissions.filter((s) => s.verdict === "Accepted");
   const successRate =
-    submissions.length > 0
-      ? Math.round((acceptedSubs.length / submissions.length) * 100)
+    currentSubmissions.length > 0
+      ? Math.round((acceptedSubs.length / currentSubmissions.length) * 100)
       : 0;
 
-  const recentActivity = submissions.slice(0, 10).reverse();
+  const recentActivity = currentSubmissions.slice(0, 10).reverse();
   const bars: string[] = recentActivity.map((s) => {
     return s.verdict === "Accepted"
       ? "bg-primary-container h-[80%]"
@@ -86,8 +87,6 @@ export function AnalyticsPage() {
   while (bars.length < 10) {
     bars.unshift("bg-surface-container-highest h-[10%]");
   }
-
-  const currentSubmissions = submissions;
 
   return (
     <div className="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container font-body min-h-screen flex flex-col">
@@ -107,44 +106,21 @@ export function AnalyticsPage() {
             >
               Problems
             </Link>
-            <a
-              className="text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Contest
-            </a>
-            <a
-              className="text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Discuss
-            </a>
-            <a
-              className="text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Interview
-            </a>
-            <a
-              className="text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-              href="#"
-            >
-              Store
-            </a>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="p-2 text-[#D9C3AD] hover:bg-[#2A2A2A] rounded transition-colors duration-200">
+          <button type="button" disabled title="Notifications are not available" className="p-2 text-[#D9C3AD] rounded opacity-40 cursor-not-allowed">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button className="p-2 text-[#D9C3AD] hover:bg-[#2A2A2A] rounded transition-colors duration-200">
+          <button type="button" disabled title="Editor settings are available in a problem workspace" className="p-2 text-[#D9C3AD] rounded opacity-40 cursor-not-allowed">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <img
-            alt="User profile avatar"
-            className="w-8 h-8 rounded-lg object-cover ml-2 border border-outline-variant/20"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm-GKBDslNP20R-vXzuv_m5l5vHyFQ-7slVKVxreFKq4-G5pY9FWy_UJiApqW8YkReXDf0FrBE6tLPFExIk2eLtMGdp5J27yHPhsBfDdhE1nzLtIzlLr23osLKuuxmFwuRE4hcuvTl-q_UwFmh59q-QIpqjztRG9glqIwfntUCxgrLdyF4a304-8qGq-5_jSUfDQV21vcp-sGNdViY-V9Ozy0VkEFAtMh_bmLUk1891KL13bKzivJU5mCuZMrqGI_O07UOZ2CDW5Qv"
-          />
+          <span
+            className="w-8 h-8 rounded-lg ml-2 border border-outline-variant/20 inline-flex items-center justify-center text-xs font-bold text-[#E5E2E1]"
+            aria-hidden="true"
+          >
+            N
+          </span>
         </div>
       </nav>
 
@@ -161,10 +137,7 @@ export function AnalyticsPage() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant opacity-70">
-              Logic Engine
-            </p>
-            <p className="text-[10px] font-mono text-primary opacity-60">
-              v2.4.0
+              Your submissions
             </p>
           </div>
         </div>
@@ -180,65 +153,26 @@ export function AnalyticsPage() {
               Problem Set
             </span>
           </Link>
-          <a
-            className="flex items-center gap-3 px-4 py-2 text-[#ffa116] bg-[#2A2A2A] rounded-lg ring-1 ring-[#ffa116]/40 group transition-all"
-            href="#"
+          <Link
+            to="/submissions"
+            className="flex items-center gap-3 px-4 py-2 text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 rounded-lg group transition-all"
           >
-            <span
-              className="material-symbols-outlined text-[20px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
+            <span className="material-symbols-outlined text-[20px]">
               history
             </span>
             <span className="font-['Inter'] text-xs font-semibold uppercase tracking-widest">
               Submissions
             </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-2 text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 rounded-lg group transition-all"
-            href="#"
-          >
+          </Link>
+          <span className="flex items-center gap-3 px-4 py-2 text-[#ffa116] bg-[#2A2A2A] rounded-lg ring-1 ring-[#ffa116]/40">
             <span className="material-symbols-outlined text-[20px]">
               analytics
             </span>
             <span className="font-['Inter'] text-xs font-semibold uppercase tracking-widest">
-              Analytics
+              This problem
             </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-2 text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 rounded-lg group transition-all"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-[20px]">star</span>
-            <span className="font-['Inter'] text-xs font-semibold uppercase tracking-widest">
-              Favorites
-            </span>
-          </a>
+          </span>
         </nav>
-        <div className="px-3 mt-auto space-y-1">
-          <a
-            className="flex items-center gap-3 px-4 py-2 text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 rounded-lg group transition-all"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              help_outline
-            </span>
-            <span className="font-['Inter'] text-xs font-semibold uppercase tracking-widest">
-              Support
-            </span>
-          </a>
-          <a
-            className="flex items-center gap-3 px-4 py-2 text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 rounded-lg group transition-all"
-            href="#"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              description
-            </span>
-            <span className="font-['Inter'] text-xs font-semibold uppercase tracking-widest">
-              Documentation
-            </span>
-          </a>
-        </div>
       </aside>
 
       {}
@@ -285,7 +219,7 @@ export function AnalyticsPage() {
                 Total Attempts
               </span>
               <span className="text-3xl font-black text-on-surface font-mono">
-                {submissions.length}
+                {currentSubmissions.length}
               </span>
             </div>
             <div className="bg-surface-container-low p-4 rounded-lg flex flex-col justify-center items-center text-center">

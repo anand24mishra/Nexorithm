@@ -4,14 +4,15 @@ import { useWorkspace } from '../../context/workspaceState';
 import { VerdictBadge } from '../common/VerdictBadge';
 
 type ConsoleTab = 'testcase' | 'result';
-type CaseTab = 'case1' | 'case2' | 'custom';
 
-const CASE_LABELS: CaseTab[] = ['case1', 'case2', 'custom'];
+interface Props {
+  sampleInput?: string;
+  sampleOutput?: string;
+}
 
-export function NxTestPanel() {
+export function NxTestPanel({ sampleInput = '', sampleOutput = '' }: Props) {
   const { state, dispatch } = useWorkspace();
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>('testcase');
-  const [caseTab, setCaseTab] = useState<CaseTab>('case1');
   const [consoleOpen, setConsoleOpen] = useState(true);
 
   
@@ -52,37 +53,14 @@ export function NxTestPanel() {
         {activeConsoleTab === 'testcase' && (
           <div className="flex-1 overflow-y-auto">
             {}
-            <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-              {CASE_LABELS.map((c, i) => (
-                <button
-                  key={c}
-                  onClick={() => setCaseTab(c)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
-                    caseTab === c
-                      ? 'bg-surface-container-highest text-on-surface border-outline-variant/30'
-                      : 'bg-surface-container-highest/40 text-on-surface-variant/60 border-outline-variant/10 hover:bg-surface-container-highest/70'
-                  }`}
-                >
-                  {c === 'custom' ? 'Custom' : `Case ${i + 1}`}
-                </button>
-              ))}
-            </div>
-            <div className="px-4 space-y-4">
+            <div className="px-4 pt-4 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">nums</label>
-                <div className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface">
-                  {caseTab === 'case1' ? '[2, 7, 11, 15]' : caseTab === 'case2' ? '[3, 2, 4]' : (
-                    <input className="bg-transparent outline-none w-full" placeholder="[2, 7, 11, 15]" defaultValue="[2, 7, 11, 15]" />
-                  )}
-                </div>
+                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Sample input</label>
+                <pre className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface whitespace-pre-wrap">{sampleInput || 'No sample input for this problem.'}</pre>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">target</label>
-                <div className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface">
-                  {caseTab === 'case1' ? '9' : caseTab === 'case2' ? '6' : (
-                    <input className="bg-transparent outline-none w-full" placeholder="9" defaultValue="9" />
-                  )}
-                </div>
+                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Sample output</label>
+                <pre className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface whitespace-pre-wrap">{sampleOutput || 'No sample output for this problem.'}</pre>
               </div>
             </div>
           </div>
@@ -92,7 +70,7 @@ export function NxTestPanel() {
         {activeConsoleTab === 'result' && (
           <div className="flex-1 overflow-y-auto">
             <SubmissionStatus />
-            {!state.isRunning && !state.isSubmitting && !state.lastResult && (
+            {!state.isRunning && !state.isSubmitting && !state.lastResult && !state.consoleOutput && (
               <div className="p-6 text-on-surface-variant/50 text-sm text-center">
                 <div className="text-3xl mb-3">🖥️</div>
                 Run your code to see results here.
@@ -129,7 +107,7 @@ export function NxTestPanel() {
 
                 {}
                 <div className="space-y-2">
-                  {state.lastResult.results.map((tc, i) => (
+                  {(state.lastResult.results ?? []).map((tc, i) => (
                     <div
                       key={i}
                       className={`p-3 rounded-lg border-l-2 bg-surface-container-lowest ${

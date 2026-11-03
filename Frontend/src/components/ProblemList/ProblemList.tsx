@@ -1,8 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useProblems } from "../../hooks/useProblems";
 import { useSubmissionHistory } from "../../hooks/useSubmissionHistory";
 import { useAuth } from "../../context/authState";
+
+const TAG_OPTIONS = [
+  "Array",
+  "Binary Search",
+  "Bit Manipulation",
+  "Dynamic Programming",
+  "Hash Table",
+  "Linked List",
+  "Math",
+  "Matrix",
+  "Recursion",
+  "Stack",
+  "String",
+  "Tree",
+  "Two Pointers",
+];
 
 const diffConfig: Record<
   string,
@@ -30,6 +46,7 @@ export function ProblemList() {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [tag, setTag] = useState("");
+  const [knownTags, setKnownTags] = useState(TAG_OPTIONS);
   const [page, setPage] = useState(1);
   const limit = 20;
 
@@ -38,6 +55,7 @@ export function ProblemList() {
     difficulty || undefined,
     search || undefined,
     limit,
+    tag || undefined,
   );
   const { submissions: submissionData } = useSubmissionHistory();
   const submissions = Array.isArray(submissionData) ? submissionData : [];
@@ -60,6 +78,25 @@ export function ProblemList() {
     setDifficulty(e.target.value);
     setPage(1);
   };
+
+  const handleTagChange = (value: string) => {
+    setTag(value);
+    setPage(1);
+  };
+
+  useEffect(() => {
+    setKnownTags((current) => {
+      const next = new Set(current);
+      for (const problem of problems) {
+        for (const problemTag of problem.tags ?? []) next.add(problemTag);
+      }
+      if (tag) next.add(tag);
+      const sorted = [...next].sort((a, b) => a.localeCompare(b));
+      return sorted.length === current.length && sorted.every((item, index) => item === current[index])
+        ? current
+        : sorted;
+    });
+  }, [problems, tag]);
 
   const solveStatus = (problemId: string) => {
     const subs = submissions.filter((s) => s.problemId === problemId);
@@ -107,39 +144,15 @@ export function ProblemList() {
               >
                 Problems
               </Link>
-              <a
-                className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-                href="#"
-              >
-                Contest
-              </a>
-              <a
-                className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-                href="#"
-              >
-                Discuss
-              </a>
-              <a
-                className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-                href="#"
-              >
-                Interview
-              </a>
-              <a
-                className="font-['Inter'] font-medium text-sm tracking-tight text-[#D9C3AD] hover:text-[#E5E2E1] transition-colors duration-200"
-                href="#"
-              >
-                Store
-              </a>
             </nav>
           </div>
           <div className="flex items-center gap-4 relative">
-            <button className="text-[#D9C3AD] hover:bg-[#2A2A2A] p-2 rounded-lg transition-colors duration-200">
+            <button type="button" disabled title="Notifications are not available" className="text-[#D9C3AD] p-2 rounded-lg opacity-40 cursor-not-allowed">
               <span className="material-symbols-outlined icon-settings">
                 notifications
               </span>
             </button>
-            <button className="text-[#D9C3AD] hover:bg-[#2A2A2A] p-2 rounded-lg transition-colors duration-200">
+            <button type="button" disabled title="Editor settings are available in a problem workspace" className="text-[#D9C3AD] p-2 rounded-lg opacity-40 cursor-not-allowed">
               <span className="material-symbols-outlined icon-settings">
                 settings
               </span>
@@ -224,29 +237,6 @@ export function ProblemList() {
             <span className="material-symbols-outlined">analytics</span>
             Analytics
           </Link>
-          <a
-            className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out"
-            href="#"
-          >
-            <span className="material-symbols-outlined">star</span>
-            Favorites
-          </a>
-        </div>
-        <div className="border-t border-outline-variant/10 pt-4 space-y-1">
-          <a
-            className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out"
-            href="#"
-          >
-            <span className="material-symbols-outlined">help_outline</span>
-            Support
-          </a>
-          <a
-            className="flex items-center gap-3 px-6 py-3 font-['Inter'] text-xs font-semibold uppercase tracking-widest text-[#D9C3AD] opacity-70 hover:bg-[#2A2A2A] hover:opacity-100 transition-all duration-150 ease-in-out"
-            href="#"
-          >
-            <span className="material-symbols-outlined">description</span>
-            Documentation
-          </a>
         </div>
       </aside>
 
@@ -287,16 +277,16 @@ export function ProblemList() {
               <div className="relative">
                 <select
                   value={tag}
-                  onChange={(e) => setTag(e.target.value)}
+                  onChange={(e) => handleTagChange(e.target.value)}
+                  aria-label="Filter by tag"
                   className="w-full bg-surface-container-lowest border-none rounded-lg py-2 pl-4 pr-10 text-sm focus:ring-1 focus:ring-primary appearance-none text-on-surface-variant outline-none"
                 >
                   <option value="">Tags</option>
-                  <option value="Array">Array</option>
-                  <option value="String">String</option>
-                  <option value="Hash Table">Hash Table</option>
-                  <option value="Dynamic Programming">
-                    Dynamic Programming
-                  </option>
+                  {knownTags.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
                 <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-sm">
                   expand_more
@@ -395,13 +385,18 @@ export function ProblemList() {
                                   {p.id}. {p.title}
                                 </span>
                                 <span className="text-[10px] text-on-surface-variant/60 flex gap-2 overflow-hidden max-w-sm mt-0.5">
-                                  {p.tags.slice(0, 3).map((t) => (
-                                    <span
+                                  {(p.tags ?? []).slice(0, 3).map((t) => (
+                                    <button
                                       key={t}
-                                      className="hover:text-primary transition-colors truncate"
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        handleTagChange(t);
+                                      }}
+                                      className={`hover:text-primary transition-colors truncate ${tag === t ? "text-primary" : ""}`}
                                     >
                                       #{t}
-                                    </span>
+                                    </button>
                                   ))}
                                 </span>
                               </div>
@@ -504,7 +499,7 @@ export function ProblemList() {
                     <span className="text-xl font-black text-primary">
                       {totalSolved}
                       <span className="text-xs text-on-surface-variant font-normal">
-                        /{total > 0 ? total : 2400}
+                        /{total}
                       </span>
                     </span>
                   </div>
@@ -517,34 +512,9 @@ export function ProblemList() {
                 </div>
 
                 {}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-surface-container-lowest p-3 rounded-lg text-center">
-                    <span className="block text-[10px] text-secondary font-bold">
-                      EASY
-                    </span>
-                    <span className="text-lg font-bold">
-                      {Math.floor(totalSolved * 0.5)}
-                    </span>
-                  </div>
-                  <div className="bg-surface-container-lowest p-3 rounded-lg text-center">
-                    <span className="block text-[10px] text-primary font-bold">
-                      MED
-                    </span>
-                    <span className="text-lg font-bold">
-                      {Math.floor(totalSolved * 0.35)}
-                    </span>
-                  </div>
-                  <div className="bg-surface-container-lowest p-3 rounded-lg text-center">
-                    <span className="block text-[10px] text-tertiary font-bold">
-                      HARD
-                    </span>
-                    <span className="text-lg font-bold">
-                      {totalSolved -
-                        Math.floor(totalSolved * 0.5) -
-                        Math.floor(totalSolved * 0.35)}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-[10px] text-on-surface-variant">
+                  Solved count uses your accepted submissions. This page does not split that count by difficulty.
+                </p>
               </div>
             </div>
 
@@ -564,31 +534,19 @@ export function ProblemList() {
                   ))}
                 </div>
                 <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-medium pt-2 border-t border-outline-variant/10">
-                  <span>Last 30 Days</span>
-                  <span className="text-secondary">+12.4% vs prev.</span>
+                  <span>Last 35 days, from your submissions</span>
                 </div>
               </div>
             </div>
 
             {}
-            <div className="relative rounded-lg overflow-hidden group border border-outline-variant/10">
-              <img
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                data-alt="abstract tech circuitry pattern"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxJiuV50OpAMWPZuEnTxsKfSCLEjDtEWoZzQ1T99H8IEt7j09VLA17ZchdphYuXHPsXMCCw1o7-DddfrxkFWHRgrIrbUYAgWE19w53r2bD76M60phzN8Tc889pv1doergV1U64B8NM-1BpUR-WiGChx_LY_NVACYo9ZgCpgcbrG-vw6YInWBLWftp-V8jZpBr5N7_e98xBMuUZ-CmYItg6gqEpI0ugyt-N42y76-7VguOCQZQqldwEnPLozG820hS7a32lyZXFOZkU"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent p-6 flex flex-col justify-end">
-                <h4 className="text-lg font-black text-on-surface tracking-tight mb-1">
-                  Upgrade Pro
-                </h4>
-                <p className="text-xs text-on-surface-variant mb-4 leading-relaxed line-clamp-2">
-                  Access premium solutions, company-specific questions, and mock
-                  interview prep.
-                </p>
-                <button className="w-full py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed font-bold text-[10px] rounded-lg uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all">
-                  Get Started
-                </button>
-              </div>
+            <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-6">
+              <h4 className="text-sm font-bold text-on-surface tracking-tight mb-1">
+                No paid plan
+              </h4>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                There is no premium tier, contest, or company-question pack in this app.
+              </p>
             </div>
           </aside>
         </div>

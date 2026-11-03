@@ -10,7 +10,12 @@ export function useSubmissionHistory(problemId?: string) {
   useEffect(() => {
     const controller = new AbortController();
     void submissionHistoryApi.getPage(page, problemId, controller.signal).then(data => {
-      if (!controller.signal.aborted) { setSubmissions(data.submissions); setTotalPages(data.totalPages); setError(null); }
+      if (!controller.signal.aborted) {
+        const rows = Array.isArray(data?.submissions) ? data.submissions : [];
+        setSubmissions(rows);
+        setTotalPages(typeof data?.totalPages === 'number' ? data.totalPages : 0);
+        setError(null);
+      }
     }).catch(err => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : 'Could not load history'); })
       .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
     window.addEventListener('submission-updated', refresh);
