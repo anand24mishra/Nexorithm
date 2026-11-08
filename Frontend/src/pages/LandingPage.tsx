@@ -1,123 +1,139 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import "@fontsource/newsreader/latin-600.css";
 import "../styles/landing.css";
 
-/* ─── Animated Code Block ─── */
+gsap.registerPlugin(useGSAP, ScrollTrigger);
+
 const codeLines = [
-  { indent: 0, text: 'function twoSum(nums, target) {', color: '#ffc78b' },
-  { indent: 1, text: 'const map = new Map();', color: '#e5e2e1' },
-  { indent: 1, text: 'for (let i = 0; i < nums.length; i++) {', color: '#ffc78b' },
-  { indent: 2, text: 'const complement = target - nums[i];', color: '#e5e2e1' },
-  { indent: 2, text: 'if (map.has(complement)) {', color: '#5edf81' },
-  { indent: 3, text: 'return [map.get(complement), i];', color: '#ffa116' },
-  { indent: 2, text: '}', color: '#5edf81' },
-  { indent: 2, text: 'map.set(nums[i], i);', color: '#e5e2e1' },
-  { indent: 1, text: '}', color: '#ffc78b' },
-  { indent: 0, text: '}', color: '#ffc78b' },
+  "function twoSum(nums, target) {",
+  "  const map = new Map();",
+  "  for (let i = 0; i < nums.length; i++) {",
+  "    const complement = target - nums[i];",
+  "    if (map.has(complement)) {",
+  "      return [map.get(complement), i];",
+  "    }",
+  "    map.set(nums[i], i);",
+  "  }",
+  "}",
 ];
 
-function AnimatedCode() {
-  const [visibleLines, setVisibleLines] = useState(0);
-  useEffect(() => {
-    if (visibleLines < codeLines.length) {
-      const t = setTimeout(() => setVisibleLines(v => v + 1), 180);
-      return () => clearTimeout(t);
-    }
-  }, [visibleLines]);
+const capabilities = [
+  ["Monaco editor", "JavaScript and Python in the browser editor. Other languages are not wired up."],
+  ["Queued judging", "Submit returns immediately. The page polls until a separate worker writes the verdict."],
+  ["Your dashboard", "Solved count, acceptance, and streak are computed from your own saved submissions."],
+  ["Submission history", "Review your past runs. There is no public leaderboard."],
+  ["Seeded problems", "The repo ships a small built-in set. The list shows problems stored in the database, not a 2,400-problem catalog."],
+  ["Sign-in", "Continue with Google, or create an account with email and password."],
+] as const;
+
+const steps = [
+  ["Pick a problem", "Open a problem stored in the database. Filter the current list by difficulty, tag, or title."],
+  ["Write a solution", "Use the Monaco editor. JavaScript and Python are the languages the judge accepts."],
+  ["Submit and poll", "The API returns 202. This page asks for status until the worker records a verdict."],
+] as const;
+
+function JudgePreview() {
+  const root = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const motion = gsap.matchMedia();
+    motion.add("(prefers-reduced-motion: reduce)", () => {
+      gsap.set(".landing-code-line, .landing-verdict", { clipPath: "inset(0% 0% 0% 0%)" });
+      gsap.set(".landing-caret", { autoAlpha: 0 });
+    });
+    motion.add("(prefers-reduced-motion: no-preference)", () => {
+      const timeline = gsap.timeline({ defaults: { ease: "expo.out" } });
+      timeline
+        .from(".landing-code-line", {
+          clipPath: "inset(0% 100% 0% 0%)",
+          duration: 0.42,
+          stagger: 0.09,
+        })
+        .to(".landing-caret", { autoAlpha: 0, duration: 0.12 }, ">")
+        .from(".landing-verdict", {
+          clipPath: "inset(0% 0% 100% 0%)",
+          duration: 0.5,
+        }, "<");
+    });
+  }, { scope: root });
 
   return (
-    <div className="landing-code-block">
-      <div className="landing-code-dots">
-        <span className="dot dot-red" /><span className="dot dot-yellow" /><span className="dot dot-green" />
-        <span className="landing-code-filename">solution.js</span>
+    <div ref={root} className="landing-code-block">
+      <div className="landing-code-bar">
+        <span>two-sum.js</span>
+        <span>javascript</span>
       </div>
       <pre className="landing-code-pre">
-        {codeLines.slice(0, visibleLines).map((l, i) => (
-          <div key={i} className="landing-code-line" style={{ paddingLeft: l.indent * 20 }}>
-            <span className="landing-line-num">{i + 1}</span>
-            <span style={{ color: l.color }}>{l.text}</span>
+        {codeLines.map((line, index) => (
+          <div key={line} className="landing-code-line">
+            <span className="landing-line-num">{index + 1}</span>
+            <span>{line}</span>
           </div>
         ))}
-        {visibleLines < codeLines.length && <span className="landing-cursor">|</span>}
+        <span className="landing-caret" aria-hidden="true" />
       </pre>
-      {visibleLines >= codeLines.length && (
-        <div className="landing-verdict">
-          <span className="material-symbols-outlined" style={{ color: '#5edf81', fontSize: 16 }}>check_circle</span>
-          <span>All test cases passed</span>
-        </div>
-      )}
+      <div className="landing-verdict">Accepted · 1 / 1 passed</div>
     </div>
   );
 }
 
-/* ─── Feature Card ─── */
-function FeatureCard({ icon, title, desc }: { icon: string; title: string; desc: string }) {
-  return (
-    <div className="landing-feature-card">
-      <div className="landing-feature-icon">
-        <span className="material-symbols-outlined">{icon}</span>
-      </div>
-      <h3>{title}</h3>
-      <p>{desc}</p>
-    </div>
-  );
-}
-
-/* ─── Step Card ─── */
-function StepCard({ num, title, desc }: { num: number; title: string; desc: string }) {
-  return (
-    <div className="landing-step-card">
-      <div className="landing-step-num">{num}</div>
-      <h3>{title}</h3>
-      <p>{desc}</p>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   LANDING PAGE
-   ═══════════════════════════════════════════════════ */
 export function LandingPage() {
+  const root = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", onScroll);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useGSAP(() => {
+    const motion = gsap.matchMedia();
+    motion.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.from(".landing-progress", {
+        scaleY: 0,
+        transformOrigin: "center top",
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".landing-steps",
+          start: "top 70%",
+          end: "bottom 55%",
+          scrub: 0.35,
+        },
+      });
+    });
+  }, { scope: root });
+
   return (
-    <div className="landing-root">
-      {/* ── Navbar ── */}
+    <div ref={root} className="landing-root">
       <nav className={`landing-nav${scrolled ? " scrolled" : ""}`}>
         <div className="landing-nav-inner">
           <Link to="/" className="landing-logo">
-            <div className="landing-logo-icon">N</div>
+            <span className="landing-logo-icon">N</span>
             <span>Nexorithm</span>
           </Link>
           <div className="landing-nav-links">
             <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
+            <a href="#how-it-works">How it works</a>
           </div>
           <div className="landing-nav-actions">
-            <Link to="/login" className="landing-btn-ghost">Sign In</Link>
-            <Link to="/signup" className="landing-btn-primary">Get Started Free</Link>
+            <Link to="/login" className="landing-btn-ghost">Sign in</Link>
+            <Link to="/signup" className="landing-btn-primary">Get started free</Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
       <section className="landing-hero">
-        <div className="landing-hero-glow" />
         <div className="landing-hero-grid">
           <div className="landing-hero-text">
-            <div className="landing-hero-badge">
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
-              Asynchronous judging
-            </div>
             <h1>
-              Practice algorithms.<br />
-              <span className="landing-gradient-text">One problem at a time.</span>
+              Practice algorithms.
+              <span>One problem at a time.</span>
             </h1>
             <p className="landing-hero-sub">
               Write JavaScript or Python in the browser. Submissions are queued
@@ -126,96 +142,87 @@ export function LandingPage() {
             <div className="landing-hero-cta">
               <Link to="/signup" className="landing-btn-primary landing-btn-lg">
                 Create an account
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
               </Link>
               <Link to="/login" className="landing-btn-outline landing-btn-lg">
-                Sign In
+                Sign in
               </Link>
             </div>
           </div>
-          <div className="landing-hero-visual">
-            <AnimatedCode />
+          <JudgePreview />
+        </div>
+      </section>
+
+      <section id="features" className="landing-section">
+        <div className="landing-split">
+          <div className="landing-section-copy">
+            <h2>What this app actually does</h2>
+            <p>Accounts, a code editor, and an asynchronous judge for your own submissions.</p>
+          </div>
+          <dl className="landing-facts">
+            {capabilities.map(([title, desc]) => (
+              <div key={title}>
+                <dt>{title}</dt>
+                <dd>{desc}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      <section id="how-it-works" className="landing-section landing-section-alt">
+        <div className="landing-split">
+          <div className="landing-section-copy">
+            <h2>From the list to a stored verdict</h2>
+          </div>
+          <div className="landing-steps">
+            <div className="landing-progress" aria-hidden="true" />
+            <ol>
+              {steps.map(([title, desc], index) => (
+                <li key={title}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>
 
-      {/* ── Logos / Tech ── */}
-      <section className="landing-logos">
-        <p>Built with industry-standard technologies</p>
-        <div className="landing-logos-row">
-          {['React', 'TypeScript', 'Node.js', 'MongoDB', 'Docker', 'Monaco'].map(t => (
-            <span key={t} className="landing-logo-pill">{t}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features ── */}
-      <section id="features" className="landing-section">
-        <div className="landing-section-header">
-          <span className="landing-section-tag">Features</span>
-          <h2>What this app <span className="landing-gradient-text">actually does</span></h2>
-          <p>Accounts, a code editor, and an asynchronous judge for your own submissions.</p>
-        </div>
-        <div className="landing-features-grid">
-          <FeatureCard icon="code" title="Monaco editor" desc="JavaScript and Python in the browser editor. Other languages are not wired up." />
-          <FeatureCard icon="gavel" title="Queued judging" desc="Submit returns immediately. The page polls until a separate worker writes the verdict." />
-          <FeatureCard icon="analytics" title="Your dashboard" desc="Solved count, acceptance, and streak are computed from your own saved submissions." />
-          <FeatureCard icon="history" title="Submission history" desc="Review your past runs. There is no public leaderboard." />
-          <FeatureCard icon="category" title="Seeded problems" desc="The repo ships a small built-in set. The list shows problems stored in the database, not a 2,400-problem catalog." />
-          <FeatureCard icon="lock_open" title="Sign-in" desc="Continue with Google, or create an account with email and password." />
-        </div>
-      </section>
-
-      {/* ── How It Works ── */}
-      <section id="how-it-works" className="landing-section landing-section-alt">
-        <div className="landing-section-header">
-          <span className="landing-section-tag">How It Works</span>
-          <h2>Three steps</h2>
-          <p>From the problem list to a stored verdict.</p>
-        </div>
-        <div className="landing-steps-grid">
-          <StepCard num={1} title="Pick a problem" desc="Open a problem stored in the database. Filter the current list by difficulty, tag, or title." />
-          <StepCard num={2} title="Write a solution" desc="Use the Monaco editor. JavaScript and Python are the languages the judge accepts." />
-          <StepCard num={3} title="Submit and poll" desc="The API returns 202. This page asks for status until the worker records a verdict." />
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
       <section className="landing-cta">
-        <div className="landing-cta-glow" />
         <h2>Create an account</h2>
         <p>Registration stores a user in MongoDB. It does not join a public community.</p>
         <Link to="/signup" className="landing-btn-primary landing-btn-lg">
-          Create Free Account
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+          Create an account
         </Link>
       </section>
 
-      {/* ── Footer ── */}
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
             <Link to="/" className="landing-logo">
-              <div className="landing-logo-icon">N</div>
+              <span className="landing-logo-icon">N</span>
               <span>Nexorithm</span>
             </Link>
-            <p>Master algorithms, one problem at a time.</p>
+            <p>Practice algorithms, one problem at a time.</p>
           </div>
           <div className="landing-footer-links">
             <div>
-              <h4>Platform</h4>
+              <h2>Platform</h2>
               <a href="#features">Features</a>
-              <a href="#how-it-works">How It Works</a>
-              <Link to="/login">Sign In</Link>
+              <a href="#how-it-works">How it works</a>
+              <Link to="/login">Sign in</Link>
             </div>
             <div>
-              <h4>Repository</h4>
+              <h2>Repository</h2>
               <a href="https://github.com/anand24mishra/Nexorithm" target="_blank" rel="noreferrer">GitHub</a>
             </div>
           </div>
         </div>
         <div className="landing-footer-bottom">
-          <span>© 2026 Nexorithm. All rights reserved.</span>
+          <span>© 2026 Nexorithm</span>
         </div>
       </footer>
     </div>
