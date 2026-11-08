@@ -61,9 +61,9 @@ function ensureGoogleInitialized(clientId: string): void {
 export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
   const slotRef = useRef<HTMLDivElement>(null);
   const onCredentialRef = useRef(onCredential);
-  const [status, setStatus] = useState<"loading" | "ready" | "missing" | "blocked">(
-    GOOGLE_CLIENT_ID ? "loading" : "missing",
-  );
+  const [status, setStatus] = useState<
+    "loading" | "ready" | "missing" | "blocked"
+  >(GOOGLE_CLIENT_ID ? "loading" : "missing");
 
   useEffect(() => {
     onCredentialRef.current = onCredential;
@@ -72,7 +72,8 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
     };
     credentialBridge.current = forward;
     return () => {
-      if (credentialBridge.current === forward) credentialBridge.current = () => {};
+      if (credentialBridge.current === forward)
+        credentialBridge.current = () => {};
     };
   }, [onCredential]);
 
@@ -92,18 +93,20 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
 
       ensureGoogleInitialized(GOOGLE_CLIENT_ID);
 
-      const width = Math.round(Math.min(Math.max(slot.clientWidth, 240), 400));
-      if (slot.childElementCount > 0 && width === paintedWidth) return true;
+      const slotWidth = Math.round(
+        Math.min(Math.max(slot.clientWidth, 240), 400),
+      );
+      if (slot.childElementCount > 0 && slotWidth === paintedWidth) return true;
 
-      slot.innerHTML = "";
-      paintedWidth = width;
+      slot.replaceChildren();
+      paintedWidth = slotWidth;
       google.accounts.id.renderButton(slot, {
         theme: "filled_black",
         size: "large",
-        width,
+        width: slotWidth,
         text,
-        shape: "pill",
-        logo_alignment: "left",
+        shape: "rectangular",
+        logo_alignment: "center",
       });
       setStatus("ready");
       return true;
@@ -148,7 +151,8 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
   if (status === "blocked") {
     return (
       <p className="auth-google-note">
-        Google’s script did not load. Continue with email, or allow accounts.google.com.
+        Google’s script did not load. Continue with email, or allow
+        accounts.google.com.
       </p>
     );
   }
@@ -156,11 +160,15 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
   return (
     <>
       <div className="auth-google" aria-busy={status === "loading"}>
-        {status === "loading" ? <div className="auth-google-skeleton" aria-hidden="true" /> : null}
+        {status === "loading" ? (
+          <div className="auth-google-skeleton" aria-hidden="true" />
+        ) : null}
         <div
           ref={slotRef}
           className="auth-google-slot"
-          style={disabled ? { pointerEvents: "none", opacity: 0.55 } : undefined}
+          style={
+            disabled ? { pointerEvents: "none", opacity: 0.55 } : undefined
+          }
         />
       </div>
       <div className="auth-divider">or</div>

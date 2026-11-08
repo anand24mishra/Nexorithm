@@ -270,12 +270,19 @@
 }
 
 .auth-google-slot {
-  display: flex;
-  justify-content: center;
+  display: block;
   width: 100%;
   max-width: 100%;
   min-height: 44px;
   overflow: hidden;
+  border-radius: 999px;
+  line-height: 0;
+  background: #131314;
+}
+
+.auth-google-slot iframe {
+  display: block;
+  max-width: 100%;
 }
 
 .auth-google-slot[hidden] {
