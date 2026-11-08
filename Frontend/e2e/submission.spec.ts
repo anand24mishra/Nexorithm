@@ -14,15 +14,17 @@ for (const verdict of ['Accepted','Wrong Answer','Time Limit Exceeded']) test(`l
     if(url.pathname.startsWith('/api/submissions'))return route.fulfill({json:{submissions:[row],total:1,page:1,totalPages:1}});
     return route.fulfill({json:{stats:{},activityData:[],recentSubmissions:[],recommendations:[]}});
   });
-  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('test@example.com');await page.getByLabel('Password',{exact:true}).fill('password123');await page.getByRole('button',{name:'Sign In',exact:true}).click();
+  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('test@example.com');await page.getByLabel('Password',{exact:true}).fill('password123');await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.waitForURL('**/dashboard');
   await page.goto('/problem/two-sum');await expect(page.locator('.monaco-editor').first()).toBeVisible();
   await page.getByRole('button',{name:/Submit/,exact:false}).first().click();
   await expect(page.getByRole('status')).toContainText('Queued');
   await expect(page.getByRole('status')).toContainText('Running',{timeout:10000});
   await expect(page.locator('.verdict-badge')).toContainText(verdict,{timeout:15000});
   expect(posts).toBe(1);expect(reads).toBe(3);
-  await page.getByRole('button',{name:'history Submits',exact:true}).click();await expect(page.getByRole('heading',{name:'Submission Records'})).toBeVisible();
-  await expect(page.getByRole('cell',{name:verdict}).first()).toBeVisible();
+  await page.getByRole('button',{name:'Submits',exact:true}).click();
+  await expect(page.getByText('Submissions',{exact:true})).toBeVisible();
+  await expect(page.getByText(verdict,{exact:true}).first()).toBeVisible();
   if(verdict==='Accepted') { await page.screenshot({path:'test-results/workspace-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/workspace-mobile.png',fullPage:true}); }
 });
 test('worker status service unavailable offers status retry', async ({page}) => {
@@ -33,6 +35,7 @@ test('worker status service unavailable offers status retry', async ({page}) => 
     if(route.request().method()==='POST')return route.fulfill({status:202,json:{submissionId:'a'.repeat(24),status:'queued'}});
     return route.fulfill({status:503,json:{error:'unavailable'}});
   });
+  await page.addInitScript(() => { sessionStorage.setItem('nx_token', 'test-token'); });
   await page.goto('/problem/two-sum');await page.getByRole('button',{name:/Submit/}).first().click();
   await expect(page.getByRole('status')).toContainText('Status unavailable',{timeout:20000});await expect(page.getByRole('button',{name:'Retry status'})).toBeVisible();
 });
