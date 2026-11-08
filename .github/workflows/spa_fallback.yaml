@@ -17,4 +17,5 @@ jobs:
       - name: Serve app routes from index.html
         env:
           DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          BUCKET: ${{ secrets.AWS_BUCKET_NAME }}
         run: bash .github/scripts/cloudfront-spa-fallback.sh
