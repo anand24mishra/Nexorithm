@@ -18,9 +18,7 @@ export type EditorialBlock =
   | { type: "divider" }
   | { type: "code"; samples: EditorialCodeSample[] };
 
-type DraftBlock =
-  | EditorialBlock
-  | { type: "playground"; uuid: string };
+type DraftBlock = EditorialBlock | { type: "playground"; uuid: string };
 
 const PREFERRED_LANGUAGES: Array<[string, string, string]> = [
   ["javascript", "javascript", "JavaScript"],
@@ -86,10 +84,13 @@ export function selectSolutionSamples(
 }
 
 function liftPreformattedCode(raw: string): string {
-  return raw.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, (_match, inner: string) => {
-    const code = decodeEntities(inner.replace(/<[^>]+>/g, "")).trim();
-    return code ? `\n\`\`\`\n${code}\n\`\`\`\n` : "";
-  });
+  return raw.replace(
+    /<pre[^>]*>([\s\S]*?)<\/pre>/gi,
+    (_match, inner: string) => {
+      const code = decodeEntities(inner.replace(/<[^>]+>/g, "")).trim();
+      return code ? `\n\`\`\`\n${code}\n\`\`\`\n` : "";
+    },
+  );
 }
 
 export function parseEditorial(raw: string): DraftBlock[] {
@@ -287,5 +288,9 @@ export async function buildEditorial(
   const content = solution["content"];
   if (typeof content !== "string" || !content.trim()) return { blocks: [] };
   const drafts = parseEditorial(content.slice(0, 200_000));
-  return { blocks: await hydratePlaygrounds(drafts, (uuid) => api.fetchPlayground(uuid)) };
+  return {
+    blocks: await hydratePlaygrounds(drafts, (uuid) =>
+      api.fetchPlayground(uuid),
+    ),
+  };
 }

@@ -113,7 +113,8 @@ export class LeetCodeApiClient implements IExternalProblemApi {
     };
     const rows = json.data?.playground?.playgroundcodeSet ?? [];
     return rows.filter(
-      (row) => typeof row?.code === "string" && typeof row?.langSlug === "string",
+      (row) =>
+        typeof row?.code === "string" && typeof row?.langSlug === "string",
     );
   }
 }

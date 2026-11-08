@@ -42,13 +42,20 @@ class Solution:
 describe("editorial", () => {
   it("keeps each approach's explanation and replaces playgrounds with code", () => {
     const blocks = parseEditorial(article);
-    expect(blocks.some((block) => block.type === "heading" && block.text === "Video Solution")).toBe(false);
+    expect(
+      blocks.some(
+        (block) => block.type === "heading" && block.text === "Video Solution",
+      ),
+    ).toBe(false);
     expect(blocks).toEqual(
       expect.arrayContaining([
         { type: "heading", level: 2, text: "Solution Article" },
         { type: "heading", level: 3, text: "Approach 1: Scan" },
         { type: "label", text: "Intuition" },
-        { type: "paragraph", text: "Check every pair until the values add up." },
+        {
+          type: "paragraph",
+          text: "Check every pair until the values add up.",
+        },
         { type: "playground", uuid: "Ab12Cd34" },
         { type: "label", text: "Complexity Analysis" },
         {
@@ -96,33 +103,57 @@ Only a few variables are stored.
         { langSlug: "python3", code: "class Solution:\n    pass" },
       ]),
     ).toEqual([
-      { language: "javascript", label: "JavaScript", code: "function solve(){ return []; }" },
-      { language: "python", label: "Python", code: "class Solution:\n    pass" },
+      {
+        language: "javascript",
+        label: "JavaScript",
+        code: "function solve(){ return []; }",
+      },
+      {
+        language: "python",
+        label: "Python",
+        code: "class Solution:\n    pass",
+      },
     ]);
   });
 
   it("builds a locked editorial as empty and rejects a bad slug", async () => {
     const api = {
-      fetchFromVercel: async () => ({ solution: { canSeeDetail: false, content: "hidden" } }),
+      fetchFromVercel: async () => ({
+        solution: { canSeeDetail: false, content: "hidden" },
+      }),
       fetchPlayground: async () => [],
     };
-    await expect(buildEditorial("two-sum", api)).resolves.toEqual({ blocks: [] });
-    await expect(buildEditorial("../etc", api)).rejects.toBeInstanceOf(ValidationError);
+    await expect(buildEditorial("two-sum", api)).resolves.toEqual({
+      blocks: [],
+    });
+    await expect(buildEditorial("../etc", api)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
   });
 
   it("fills playground placeholders with the fetched solution", async () => {
     const api = {
-      fetchFromVercel: async () => ({ solution: { canSeeDetail: true, content: article } }),
+      fetchFromVercel: async () => ({
+        solution: { canSeeDetail: true, content: article },
+      }),
       fetchPlayground: async (uuid: string) => {
         expect(uuid).toBe("Ab12Cd34");
         return [
-          { langSlug: "javascript", code: "function solve(){ return [0, 1]; }" },
-          { langSlug: "python3", code: "class Solution:\n    def solve(self):\n        return [0, 1]" },
+          {
+            langSlug: "javascript",
+            code: "function solve(){ return [0, 1]; }",
+          },
+          {
+            langSlug: "python3",
+            code: "class Solution:\n    def solve(self):\n        return [0, 1]",
+          },
         ];
       },
     };
     const editorial = await buildEditorial("two-sum", api);
-    const code = editorial.blocks.find((block) => block.type === "code" && block.samples.length === 2);
+    const code = editorial.blocks.find(
+      (block) => block.type === "code" && block.samples.length === 2,
+    );
     expect(code).toMatchObject({
       type: "code",
       samples: [
@@ -130,6 +161,8 @@ Only a few variables are stored.
         { label: "Python", language: "python" },
       ],
     });
-    expect(editorial.blocks.some((block) => block.type === "paragraph")).toBe(true);
+    expect(editorial.blocks.some((block) => block.type === "paragraph")).toBe(
+      true,
+    );
   });
 });
