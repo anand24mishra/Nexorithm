@@ -20,6 +20,8 @@ export function createSubmissionRoutes(
     controller.submit,
   );
   router.get("/", controller.getSubmissions);
+  router.get("/activity", controller.getActivity);
+  router.get("/analytics", controller.getAnalytics);
   router.get("/problem/:problemId", controller.getSubmissionsByProblem);
   router.get("/:id", controller.getSubmission);
   return router;

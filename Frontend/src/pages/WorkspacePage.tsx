@@ -8,48 +8,58 @@ import { NxProblemPanel } from '../components/Workspace/NxProblemPanel';
 import { NxEditorPanel } from '../components/Workspace/NxEditorPanel';
 import { NxTestPanel } from '../components/Workspace/NxTestPanel';
 import { useSubmission } from '../hooks/useSubmission';
-import { useAuth } from '../context/authState';
 import { Language } from '../types';
-import Confetti from 'react-confetti';
-import { Modal } from '../components/common/Modal';
 
-type SideTab = 'problem' | 'submissions' | 'editorial' | 'solutions';
+type SideTab = 'problem' | 'submissions' | 'editorial';
+type Pane = 'description' | 'code' | 'results';
+
+function isLanguage(value: unknown): value is Language {
+  return value === Language.JAVASCRIPT || value === Language.PYTHON;
+}
 
 function WorkspaceShell() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const shellRef = useRef<HTMLDivElement>(null);
+  const languageRef = useRef<Language>(Language.JAVASCRIPT);
+  const problemIdRef = useRef('');
   const { problem, loading, error } = useProblem(slug ?? '');
-  const { problems } = useProblems(1, undefined, undefined, 5000);
+  const { problems } = useProblems(1, undefined, undefined, 100);
   const [sideTab, setSideTab] = useState<SideTab>('problem');
+  const [pane, setPane] = useState<Pane>('code');
   const { state, dispatch } = useWorkspace();
-  const { runCode, submitCode, isRunning, isSubmitting } = useSubmission();
-  const { isAuthenticated, username, logout } = useAuth();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showReset, setShowReset] = useState(false);
+  const { runCode, submitCode, isRunning, isSubmitting, canRetryStatus } = useSubmission();
   const [browserFullscreen, setBrowserFullscreen] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [acceptedNote, setAcceptedNote] = useState(false);
   const prevResult = useRef<string | null>(null);
   const skipDraftReset = useRef(false);
+  const returnTo = `${location.pathname}${location.search}`;
 
-  
+  const goToLogin = useCallback(() => {
+    navigate('/login', { state: { from: returnTo } });
+  }, [navigate, returnTo]);
+
   useEffect(() => {
     if (!problem) return;
-    const lang = state.language;
+    const restoredState = location.state as { code?: unknown; language?: unknown } | null;
+    const restoredCode = restoredState?.code;
+    const restoredLanguage = isLanguage(restoredState?.language) ? restoredState.language : null;
+    const lang = restoredLanguage ?? state.language;
     const starterCode = lang === Language.PYTHON
       ? problem.starterCode.python
       : problem.starterCode.javascript;
     const savedDraft = localStorage.getItem(`nexorithm-draft-${problem.id}-${lang}`);
-    const restored = (location.state as { code?: unknown } | null)?.code;
-    const restoring = typeof restored === 'string' && state.problemId !== problem.id;
+    const restoring = typeof restoredCode === 'string' && state.problemId !== problem.id;
     if (!restoring && skipDraftReset.current) {
       skipDraftReset.current = false;
       return;
     }
-    const code = restoring ? restored : (savedDraft ?? starterCode);
+    const code = restoring ? restoredCode : (savedDraft ?? starterCode);
     if (restoring) skipDraftReset.current = true;
+    if (restoredLanguage && restoredLanguage !== state.language) {
+      dispatch({ type: 'SET_LANGUAGE', payload: restoredLanguage });
+    }
     if (state.problemId !== problem.id) {
       dispatch({ type: 'SET_PROBLEM', payload: { problemId: problem.id, code } });
     } else {
@@ -59,6 +69,11 @@ function WorkspaceShell() {
 
   useEffect(() => {
     if (!state.problemId || !state.code) return;
+    const languageChanged = languageRef.current !== state.language;
+    const problemChanged = problemIdRef.current !== state.problemId;
+    languageRef.current = state.language;
+    problemIdRef.current = state.problemId;
+    if (languageChanged && !problemChanged) return;
     localStorage.setItem(`nexorithm-draft-${state.problemId}-${state.language}`, state.code);
   }, [state.code, state.problemId, state.language]);
 
@@ -69,11 +84,18 @@ function WorkspaceShell() {
       prevResult.current !== JSON.stringify(state.lastResult)
     ) {
       prevResult.current = JSON.stringify(state.lastResult);
-      const start = setTimeout(() => setShowConfetti(true), 0);
-      const t = setTimeout(() => setShowConfetti(false), 6000);
-      return () => { clearTimeout(start); clearTimeout(t); };
+      const start = setTimeout(() => setAcceptedNote(true), 0);
+      const hide = setTimeout(() => setAcceptedNote(false), 6000);
+      return () => {
+        clearTimeout(start);
+        clearTimeout(hide);
+      };
     }
   }, [state.lastResult]);
+
+  useEffect(() => {
+    if (state.isRunning || state.isSubmitting) setPane('results');
+  }, [state.isRunning, state.isSubmitting]);
 
   const goToPrev = useCallback(() => {
     if (!problem || !problems.length) return;
@@ -104,221 +126,156 @@ function WorkspaceShell() {
     { id: 'problem', icon: 'description', label: 'Problem' },
     { id: 'submissions', icon: 'history', label: 'Submits' },
     { id: 'editorial', icon: 'menu_book', label: 'Editorial' },
-    { id: 'solutions', icon: 'lightbulb', label: 'Solutions' },
   ];
 
-  return (
-    <div ref={shellRef} className={`bg-background text-on-surface font-body overflow-hidden h-screen flex flex-col ${state.isFullscreen ? 'fixed inset-0 z-[80]' : ''}`}>
-      {showConfetti && (
-        <div className="fixed inset-0 z-[9999] pointer-events-none">
-          <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={600} gravity={0.22} />
-        </div>
-      )}
+  const paneClass = (id: Pane) =>
+    `${pane === id ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex`;
 
-      {}
-      <header className="flex justify-between items-center w-full px-4 h-12 bg-surface-container-low border-none shadow-none z-50 flex-shrink-0">
-        <div className="flex items-center gap-5">
-          <button onClick={() => navigate('/')} className="text-lg font-bold text-on-surface tracking-tighter hover:text-primary transition-colors">
+  const needsSignIn = state.consoleOutput.startsWith('Sign in');
+
+  return (
+    <div ref={shellRef} className={`flex h-screen min-w-0 flex-col overflow-hidden bg-background font-body text-on-surface ${state.isFullscreen ? 'fixed inset-0 z-[80]' : ''}`}>
+      <header className="relative z-50 flex flex-shrink-0 flex-col border-b border-outline-variant bg-surface-container-low">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+          <button type="button" onClick={() => navigate('/')} className="min-h-11 text-base font-semibold tracking-tight text-on-surface">
             Nexorithm
           </button>
-          <nav className="flex items-center gap-1">
-            <button
-              onClick={() => navigate('/')}
-              className="px-3 h-12 flex items-center text-on-surface font-semibold border-b-2 border-primary-container text-sm tracking-wide transition-colors"
-            >
-              Problems
+          <button type="button" onClick={() => navigate('/')} className="min-h-11 px-2 text-sm text-on-surface-variant">
+            Problems
+          </button>
+          <div className="flex items-center">
+            <button type="button" onClick={goToPrev} className="inline-flex min-h-11 min-w-11 items-center justify-center text-on-surface-variant" aria-label="Previous problem">
+              <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
             </button>
-            <div className="flex items-center ml-2 bg-surface-container rounded-lg p-0.5">
-              <button onClick={goToPrev} className="p-1.5 text-on-surface-variant opacity-70 hover:bg-surface-container-high hover:text-on-surface rounded transition-all" title="Previous problem">
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant px-1 font-medium">Prev</span>
-              <div className="w-px h-3 bg-outline-variant/20 mx-1" />
-              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant px-1 font-medium">Next</span>
-              <button onClick={goToNext} className="p-1.5 text-on-surface-variant opacity-70 hover:bg-surface-container-high hover:text-on-surface rounded transition-all" title="Next problem">
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={runCode}
-            disabled={isRunning || isSubmitting || !problem}
-            className="px-4 py-1.5 rounded-lg border border-primary-container text-primary-container font-semibold text-xs hover:bg-primary-container/10 active:scale-95 transition-all disabled:opacity-40"
-          >
-            {isRunning ? <span className="flex items-center gap-1.5"><span className="spinner" /> Running…</span> : '▶  Run'}
-          </button>
-          <button
-            onClick={submitCode}
-            disabled={isRunning || isSubmitting || !problem}
-            className="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary-container font-bold text-xs hover:bg-primary-fixed-dim active:scale-[0.97] transition-all disabled:opacity-40"
-          >
-            {isSubmitting ? <span className="flex items-center gap-1.5"><span className="spinner" /> Submitting…</span> : '✓  Submit'}
-          </button>
-          <div className="flex items-center gap-1 ml-1 relative">
+            <button type="button" onClick={goToNext} className="inline-flex min-h-11 min-w-11 items-center justify-center text-on-surface-variant" aria-label="Next problem">
+              <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+            </button>
+          </div>
+          <div className="ml-auto flex flex-shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => { setShowSettings((open) => !open); setShowProfileMenu(false); }}
-              className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all"
-              title="Settings"
-              aria-expanded={showSettings}
+              onClick={runCode}
+              disabled={isRunning || isSubmitting || !problem}
+              className="inline-flex min-h-11 flex-shrink-0 items-center border border-primary-container px-3 text-sm font-semibold text-primary-container disabled:opacity-40"
             >
-              <span className="material-symbols-outlined">settings</span>
+              {isRunning ? 'Running…' : 'Run'}
             </button>
-            {showSettings && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-high rounded-xl border border-outline-variant/20 shadow-xl p-3 z-50 space-y-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Language</p>
-                  <div className="flex gap-1">
-                    <button type="button" className={`px-2 py-1 rounded text-xs ${state.language === Language.JAVASCRIPT ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-surface-container-highest text-on-surface-variant'}`} onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: Language.JAVASCRIPT })}>JavaScript</button>
-                    <button type="button" className={`px-2 py-1 rounded text-xs ${state.language === Language.PYTHON ? 'bg-primary-container/20 text-primary-container' : 'hover:bg-surface-container-highest text-on-surface-variant'}`} onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: Language.PYTHON })}>Python</button>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2">Font size</p>
-                  <div className="flex items-center justify-between">
-                    <button type="button" className="px-2 py-1 rounded hover:bg-surface-container-highest" onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize - 1 })}>A-</button>
-                    <span className="text-xs font-mono">{state.fontSize}px</span>
-                    <button type="button" className="px-2 py-1 rounded hover:bg-surface-container-highest" onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize + 1 })}>A+</button>
-                  </div>
-                </div>
-                <button type="button" className="w-full text-left text-xs font-semibold text-on-surface-variant hover:text-on-surface" onClick={() => { setShowSettings(false); setShowReset(true); }} disabled={!problem}>Reset code</button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={submitCode}
+              disabled={isRunning || isSubmitting || !problem}
+              className="inline-flex min-h-11 flex-shrink-0 items-center bg-primary-container px-3 text-sm font-semibold text-on-primary disabled:opacity-40"
+            >
+              {isSubmitting ? 'Submitting…' : 'Submit'}
+            </button>
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="p-1.5 text-on-surface-variant hover:bg-surface-container-high rounded transition-all"
-              title="Toggle fullscreen"
+              className="hidden min-h-11 min-w-11 items-center justify-center text-on-surface-variant sm:inline-flex"
+              aria-label={browserFullscreen || state.isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
               aria-pressed={browserFullscreen || state.isFullscreen}
             >
-              <span className="material-symbols-outlined">{browserFullscreen || state.isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
+              <span className="material-symbols-outlined" aria-hidden="true">{browserFullscreen || state.isFullscreen ? 'fullscreen_exit' : 'fullscreen'}</span>
             </button>
-            {isAuthenticated ? (
-              <div className="relative ml-1">
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold shadow-sm hover:opacity-90 transition-opacity"
-                >
-                  {username?.[0]?.toUpperCase() || 'U'}
-                </button>
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-surface-container-high rounded-xl border border-outline-variant/20 shadow-xl py-1 z-50">
-                    <div className="px-4 py-2 border-b border-outline-variant/10">
-                      <p className="text-sm font-bold text-on-surface truncate">{username}</p>
-                    </div>
-                    <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-error hover:bg-surface-container-highest transition-colors flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">logout</span>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex gap-2 ml-2 items-center">
-                <button onClick={() => navigate('/login')} className="px-3 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors">Sign In</button>
-              </div>
-            )}
           </div>
+        </div>
+        <div className="flex border-t border-outline-variant lg:hidden" role="tablist" aria-label="Workspace panes">
+          {([
+            ['description', 'Description'],
+            ['code', 'Code'],
+            ['results', 'Results'],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={pane === id}
+              className={`min-h-11 flex-1 text-sm ${pane === id ? 'text-on-surface' : 'text-on-surface-variant'}`}
+              onClick={() => setPane(id)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {}
-        <aside className="flex flex-col items-center py-3 space-y-4 bg-background w-14 flex-shrink-0 border-r border-outline-variant/10">
-          <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>terminal</span>
-          </div>
-          <nav className="flex flex-col items-center w-full gap-0">
+      {needsSignIn && (
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-outline-variant bg-surface-container px-3 py-2" role="status">
+          <p className="text-sm text-on-surface">Sign in to run or submit. Your draft stays in this browser.</p>
+          <button type="button" onClick={goToLogin} className="min-h-11 bg-primary-container px-3 text-sm font-semibold text-on-primary">
+            Sign in to run
+          </button>
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden w-14 flex-shrink-0 flex-col border-r border-outline-variant bg-background py-2 lg:flex">
+          <nav className="flex flex-col" aria-label="Problem sections">
             {sideNav.map(({ id, icon, label }) => (
               <button
                 key={id}
-                onClick={() => {
-                  if (id === 'submissions' && problem) {
-                    navigate(`/problem/${problem.slug}/analytics`);
-                  } else {
-                    setSideTab(id);
-                  }
-                }}
-                className={`w-full py-3.5 flex flex-col items-center gap-0.5 transition-all group ${sideTab === id
-                    ? 'text-primary-container border-r-2 border-primary-container bg-surface-container-low'
-                    : 'text-on-surface-variant opacity-50 hover:bg-surface-container-high hover:opacity-100 border-r-2 border-transparent'
-                  }`}
+                type="button"
+                onClick={() => setSideTab(id)}
+                aria-current={sideTab === id ? 'page' : undefined}
+                className={`flex min-h-11 flex-col items-center justify-center text-[10px] ${sideTab === id ? 'bg-surface-container-low text-primary-container' : 'text-on-surface-variant'}`}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: sideTab === id ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
-                <span className="text-[7px] uppercase tracking-tighter font-medium">{label}</span>
+                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: '20px' }}>{icon}</span>
+                {label}
               </button>
             ))}
           </nav>
-          <div className="mt-auto pb-2">
-            <button className="w-9 h-9 rounded-lg bg-surface-container-highest/30 flex items-center justify-center text-primary hover:bg-surface-container-highest transition-colors">
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>workspace_premium</span>
-            </button>
-          </div>
         </aside>
 
-        {}
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-px bg-surface-container-lowest overflow-y-auto lg:overflow-hidden">
-          {}
-          <section className="col-span-1 lg:col-span-4 min-h-[320px] lg:min-h-0 bg-surface-container-low flex flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:grid lg:grid-cols-12 lg:gap-px lg:bg-surface-container-lowest">
+          <section className={`${paneClass('description')} bg-surface-container-low lg:col-span-4`}>
+            <div className="flex flex-shrink-0 border-b border-outline-variant lg:hidden">
+              {sideNav.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`min-h-11 flex-1 text-sm ${sideTab === id ? 'text-on-surface' : 'text-on-surface-variant'}`}
+                  onClick={() => setSideTab(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {loading && (
-              <div className="flex-1 flex items-center justify-center gap-3 text-on-surface-variant">
-                <span className="spinner" style={{ width: 20, height: 20 }} />
-                <span className="text-sm">Loading…</span>
+              <div className="flex flex-1 items-center justify-center gap-3 text-on-surface-variant">
+                <span className="spinner" />
+                <span className="text-sm">Loading problem…</span>
               </div>
             )}
             {error && (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="text-center">
-                  <div className="text-3xl mb-3">⚠️</div>
-                  <div className="text-error text-sm">{error}</div>
-                </div>
+              <div className="flex flex-1 items-center justify-center p-6">
+                <p className="text-sm text-error">{error}</p>
               </div>
             )}
             {problem && <NxProblemPanel problem={problem} activeTab={sideTab} />}
           </section>
 
-          {}
-          <section className="col-span-1 lg:col-span-5 min-h-[420px] lg:min-h-0 bg-surface-container-high flex flex-col overflow-hidden">
-            {problem && <NxEditorPanel problem={problem} />}
+          <section className={`${paneClass('code')} bg-surface-container-high lg:col-span-5`}>
+            {problem && <NxEditorPanel problem={problem} codePaneVisible={pane === 'code'} />}
           </section>
 
-          {}
-          <section className="col-span-1 lg:col-span-3 min-h-[320px] lg:min-h-0 bg-surface-container-low flex flex-col overflow-hidden">
-            <NxTestPanel sampleInput={problem?.sampleInput} sampleOutput={problem?.sampleOutput} />
+          <section className={`${paneClass('results')} bg-surface-container-low lg:col-span-3`}>
+            <NxTestPanel
+              sampleInput={problem?.sampleInput}
+              sampleOutput={problem?.sampleOutput}
+              canRetry={canRetryStatus}
+            />
           </section>
         </main>
       </div>
 
-      {}
-      {state.lastResult?.isSubmit && state.lastResult?.verdict === 'Accepted' && (
-        <div className="fixed bottom-6 right-6 z-[100] bg-surface-container-highest/90 backdrop-blur-xl border border-outline-variant/20 rounded-xl p-4 shadow-2xl flex items-center gap-4 max-w-xs animate-fade-in">
-          <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary flex-shrink-0">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-on-surface">Solution Accepted!</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              {state.lastResult.passedCount}/{state.lastResult.totalCount} test cases passed · {state.lastResult.executionTimeMs}ms
-            </p>
-          </div>
+      {acceptedNote && state.lastResult?.verdict === 'Accepted' && (
+        <div className="pointer-events-none fixed bottom-4 right-4 z-[70] max-w-xs border border-outline-variant bg-surface-container-high p-4" role="status">
+          <p className="text-sm font-semibold text-on-surface">Accepted</p>
+          <p className="mt-1 font-mono text-xs text-on-surface-variant">
+            {state.lastResult.passedCount}/{state.lastResult.totalCount} passed · {state.lastResult.executionTimeMs} ms
+          </p>
         </div>
       )}
-      <Modal
-        isOpen={showReset}
-        title="Reset Code"
-        message="Reset to the starter code? Your current code will be deleted."
-        onConfirm={() => {
-          if (!problem) return;
-          const starter = state.language === Language.PYTHON ? problem.starterCode.python : problem.starterCode.javascript;
-          localStorage.removeItem(`nexorithm-draft-${problem.id}-${state.language}`);
-          dispatch({ type: 'RESET_CODE', payload: starter });
-          setShowReset(false);
-        }}
-        onCancel={() => setShowReset(false)}
-      />
     </div>
   );
 }

@@ -30,5 +30,13 @@ export function useDashboard() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const onUpdate = () => {
+      void load();
+    };
+    window.addEventListener("submission-updated", onUpdate);
+    return () => window.removeEventListener("submission-updated", onUpdate);
+  }, [load]);
+
   return { data, isLoading, error, refresh: load };
 }

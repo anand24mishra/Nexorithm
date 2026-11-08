@@ -1,10 +1,22 @@
+import { AppShell } from "../components/Layout/AppShell";
+import { AnalyticsReport } from "../components/Analytics/AnalyticsReport";
+import { useAnalytics } from "../hooks/useAnalytics";
+
 export function GlobalAnalyticsPage() {
+  const { report, loading, error, reload } = useAnalytics();
+
   return (
-    <div className="min-h-screen bg-background text-on-background font-body p-8 flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold">Global Analytics</h1>
-        <p className="text-on-surface-variant">Detailed platform-wide analytics coming soon.</p>
+    <AppShell title="Analytics">
+      <div className="min-w-0 px-4 py-6 sm:px-8">
+        <AnalyticsReport
+          report={report}
+          loading={loading}
+          error={error}
+          onRetry={() => void reload()}
+          heading="Analytics"
+          lede="Every figure comes from your saved submissions. Acceptance is accepted runs divided by all runs. This is your record, not a public leaderboard."
+        />
       </div>
-    </div>
+    </AppShell>
   );
 }

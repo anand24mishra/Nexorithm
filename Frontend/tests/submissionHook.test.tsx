@@ -8,6 +8,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../src/context/AuthContext";
 import { WorkspaceProvider } from "../src/context/WorkspaceContext";
 import { useWorkspace } from "../src/context/workspaceState";
@@ -18,8 +19,16 @@ vi.mock("../src/api/submissionApi", () => ({
 }));
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
   vi.resetAllMocks();
 });
+function sessionToken(): string {
+  const payload = btoa(JSON.stringify({ username: "ada" }))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return `hdr.${payload}.sig`;
+}
 function Controls() {
   const { dispatch, state } = useWorkspace();
   const { submitCode } = useSubmission();
@@ -56,12 +65,15 @@ it("synchronously prevents duplicate submit clicks and clears busy on terminal r
     totalTestCases: 1,
     executionTimeMs: 1,
   } as Awaited<ReturnType<typeof submissionApi.get>>);
+  sessionStorage.setItem("nx_token", sessionToken());
   render(
-    <AuthProvider>
-      <WorkspaceProvider>
-        <Controls />
-      </WorkspaceProvider>
-    </AuthProvider>,
+    <MemoryRouter>
+      <AuthProvider>
+        <WorkspaceProvider>
+          <Controls />
+        </WorkspaceProvider>
+      </AuthProvider>
+    </MemoryRouter>,
   );
   fireEvent.click(screen.getByText("Setup"));
   fireEvent.click(screen.getByText("Submit"));

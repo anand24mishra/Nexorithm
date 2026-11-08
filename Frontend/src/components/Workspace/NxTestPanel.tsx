@@ -1,5 +1,5 @@
 import { SubmissionStatus } from './SubmissionStatus';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWorkspace } from '../../context/workspaceState';
 import { VerdictBadge } from '../common/VerdictBadge';
 
@@ -8,36 +8,43 @@ type ConsoleTab = 'testcase' | 'result';
 interface Props {
   sampleInput?: string;
   sampleOutput?: string;
+  canRetry?: boolean;
 }
 
-export function NxTestPanel({ sampleInput = '', sampleOutput = '' }: Props) {
-  const { state, dispatch } = useWorkspace();
+export function NxTestPanel({ sampleInput = '', sampleOutput = '', canRetry = false }: Props) {
+  const { state } = useWorkspace();
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>('testcase');
-  const [consoleOpen, setConsoleOpen] = useState(true);
 
-  
-  const activeConsoleTab = state.lastResult || state.isRunning || state.isSubmitting || state.consoleOutput ? 'result' : consoleTab;
+  useEffect(() => {
+    if (state.isRunning || state.isSubmitting) setConsoleTab('result');
+  }, [state.isRunning, state.isSubmitting]);
+
+  useEffect(() => {
+    if (state.consoleOutput) setConsoleTab('result');
+  }, [state.consoleOutput]);
+
+  const results = state.lastResult?.results ?? [];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {}
-      <div className="h-10 px-4 flex items-center justify-between border-b border-outline-variant/10 bg-surface flex-shrink-0">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex h-10 flex-shrink-0 items-center justify-between border-b border-outline-variant/10 bg-surface px-4">
         <div className="flex items-center gap-4">
           {(['testcase', 'result'] as ConsoleTab[]).map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setConsoleTab(tab)}
-              className={`text-[11px] font-bold uppercase tracking-widest h-10 border-b-2 transition-colors ${
-                activeConsoleTab === tab
-                  ? 'text-on-surface border-primary-container'
-                  : 'text-on-surface-variant/50 border-transparent hover:text-on-surface-variant'
+              className={`h-10 border-b-2 text-[11px] font-bold uppercase tracking-widest transition-colors ${
+                consoleTab === tab
+                  ? 'border-primary-container text-on-surface'
+                  : 'border-transparent text-on-surface-variant/50 hover:text-on-surface-variant'
               }`}
             >
               {tab === 'testcase' ? 'Test Case' : (
                 <span className="flex items-center gap-1.5">
                   Result
                   {state.lastResult && (
-                    <span className={`w-1.5 h-1.5 rounded-full ${state.lastResult.verdict === 'Accepted' ? 'bg-secondary' : 'bg-error'}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${state.lastResult.verdict === 'Accepted' ? 'bg-secondary' : 'bg-error'}`} />
                   )}
                 </span>
               )}
@@ -46,133 +53,101 @@ export function NxTestPanel({ sampleInput = '', sampleOutput = '' }: Props) {
         </div>
       </div>
 
-      {}
-      <div className="flex-1 overflow-hidden flex flex-col">
-
-        {}
-        {activeConsoleTab === 'testcase' && (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {consoleTab === 'testcase' && (
           <div className="flex-1 overflow-y-auto">
-            {}
-            <div className="px-4 pt-4 space-y-4">
+            <div className="space-y-4 px-4 pt-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Sample input</label>
-                <pre className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface whitespace-pre-wrap">{sampleInput || 'No sample input for this problem.'}</pre>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Sample input</p>
+                <pre className="whitespace-pre-wrap rounded border border-outline-variant/10 bg-surface-container-lowest p-3 font-mono text-sm text-on-surface">{sampleInput || 'No sample input for this problem.'}</pre>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Sample output</label>
-                <pre className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-sm text-on-surface whitespace-pre-wrap">{sampleOutput || 'No sample output for this problem.'}</pre>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Sample output</p>
+                <pre className="whitespace-pre-wrap rounded border border-outline-variant/10 bg-surface-container-lowest p-3 font-mono text-sm text-on-surface">{sampleOutput || 'No sample output for this problem.'}</pre>
               </div>
             </div>
           </div>
         )}
 
-        {}
-        {activeConsoleTab === 'result' && (
+        {consoleTab === 'result' && (
           <div className="flex-1 overflow-y-auto">
-            <SubmissionStatus />
+            <SubmissionStatus canRetry={canRetry} />
             {!state.isRunning && !state.isSubmitting && !state.lastResult && !state.consoleOutput && (
-              <div className="p-6 text-on-surface-variant/50 text-sm text-center">
-                <div className="text-3xl mb-3">🖥️</div>
+              <p className="p-6 text-center text-sm text-on-surface-variant">
                 Run your code to see results here.
-              </div>
+              </p>
             )}
             {!state.isRunning && !state.isSubmitting && state.lastResult && (
-              <div className="p-4 space-y-4">
-                {}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`flex h-2 w-2 rounded-full ${state.lastResult.verdict === 'Accepted' ? 'bg-secondary' : 'bg-error'}`}
-                    />
-                    <VerdictBadge verdict={state.lastResult.verdict} />
-                  </div>
-                  <span className="text-[10px] text-on-surface-variant/50">
+              <div className="space-y-4 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <VerdictBadge verdict={state.lastResult.verdict} />
+                  <span className="text-[10px] text-on-surface-variant">
                     {state.lastResult.passedCount}/{state.lastResult.totalCount} passed
                   </span>
                 </div>
 
-                {}
-                {state.lastResult.verdict === 'Accepted' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
-                      <p className="text-[9px] uppercase font-bold text-on-surface-variant/40 mb-1">Runtime</p>
-                      <p className="text-sm font-mono text-on-surface">{state.lastResult.executionTimeMs} ms</p>
-                    </div>
-                    <div className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
-                      <p className="text-[9px] uppercase font-bold text-on-surface-variant/40 mb-1">Test Cases</p>
-                      <p className="text-sm font-mono text-secondary">{state.lastResult.passedCount}/{state.lastResult.totalCount}</p>
-                    </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+                    <p className="mb-1 text-[9px] font-bold uppercase text-on-surface-variant">Runtime</p>
+                    <p className="font-mono text-sm text-on-surface">{state.lastResult.executionTimeMs} ms</p>
+                  </div>
+                  <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+                    <p className="mb-1 text-[9px] font-bold uppercase text-on-surface-variant">Test cases</p>
+                    <p className="font-mono text-sm text-on-surface">{state.lastResult.passedCount}/{state.lastResult.totalCount}</p>
+                  </div>
+                </div>
+
+                {state.lastResult.stderr && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Standard error</p>
+                    <pre className="whitespace-pre-wrap rounded border border-outline-variant/20 bg-surface-container-lowest p-3 font-mono text-xs text-error">{state.lastResult.stderr}</pre>
                   </div>
                 )}
 
-                {}
-                <div className="space-y-2">
-                  {(state.lastResult.results ?? []).map((tc, i) => (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-lg border-l-2 bg-surface-container-lowest ${
-                        tc.passed ? 'border-secondary' : 'border-error'
-                      }`}
-                    >
-                      <div className={`text-xs font-semibold mb-2 flex items-center gap-1.5 ${tc.passed ? 'text-secondary' : 'text-error'}`}>
-                        <span className="material-symbols-outlined text-[14px]">{tc.passed ? 'check_circle' : 'cancel'}</span>
-                        Test Case {i + 1}: {tc.passed ? 'Passed' : 'Failed'}
+                {results.length === 0 ? (
+                  <p className="text-sm text-on-surface-variant">
+                    The judge did not return per-case output. Hidden tests stay hidden.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {results.map((tc, i) => (
+                      <div key={i} className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+                        <div className={`mb-2 flex items-center gap-1.5 text-xs font-semibold ${tc.passed ? 'text-secondary' : 'text-error'}`}>
+                          <span className="material-symbols-outlined text-[14px]" aria-hidden="true">{tc.passed ? 'check_circle' : 'cancel'}</span>
+                          Test Case {i + 1}: {tc.passed ? 'Passed' : 'Failed'}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+                          <div>
+                            <div className="mb-1 font-sans text-[10px] uppercase text-on-surface-variant/50">Expected</div>
+                            <div className="text-on-surface">{tc.expectedOutput}</div>
+                          </div>
+                          <div>
+                            <div className="mb-1 font-sans text-[10px] uppercase text-on-surface-variant/50">Output</div>
+                            <div className={tc.passed ? 'text-on-surface' : 'text-error'}>{tc.actualOutput || '(empty)'}</div>
+                          </div>
+                        </div>
+                        {tc.stderr && (
+                          <div className="mt-2 border-t border-outline-variant/20 pt-2 font-mono text-[11px] text-error">
+                            {tc.stderr}
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div>
-                          <div className="text-on-surface-variant/50 mb-1 font-sans text-[10px] uppercase">Expected</div>
-                          <div className="text-on-surface">{tc.expectedOutput}</div>
-                        </div>
-                        <div>
-                          <div className="text-on-surface-variant/50 mb-1 font-sans text-[10px] uppercase">Output</div>
-                          <div className={tc.passed ? 'text-on-surface' : 'text-error'}>{tc.actualOutput || '(empty)'}</div>
-                        </div>
-                      </div>
-                      {tc.stderr && (
-                        <div className="mt-2 text-[11px] font-mono text-error/80 border-t border-error/10 pt-2">
-                          {tc.stderr}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                {}
                 {state.lastResult.stdout && (
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant/60">Output</label>
-                    <div className="bg-surface-container-lowest p-3 rounded border border-outline-variant/10 font-mono text-xs text-secondary-fixed">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Output</p>
+                    <pre className="whitespace-pre-wrap rounded border border-outline-variant/20 bg-surface-container-lowest p-3 font-mono text-xs text-on-surface">
                       {state.lastResult.stdout}
-                    </div>
+                    </pre>
                   </div>
                 )}
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {}
-      <div className="h-10 px-4 flex items-center justify-between border-t border-outline-variant/10 bg-surface flex-shrink-0">
-        <button
-          onClick={() => setConsoleOpen((v) => !v)}
-          className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors group"
-        >
-          <span className={`material-symbols-outlined text-[18px] transition-transform ${consoleOpen ? '' : 'rotate-180'}`}>
-            keyboard_arrow_up
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-widest">Console</span>
-        </button>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: 'testcase' })}
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
-            title="Terminal"
-          >
-            <span className="material-symbols-outlined text-[18px]">terminal</span>
-          </button>
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px]">bug_report</span>
-        </div>
       </div>
     </div>
   );

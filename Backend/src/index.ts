@@ -44,7 +44,12 @@ export async function bootstrap(): Promise<void> {
   const app = express();
 
   app.disable("x-powered-by");
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+      ...(config.nodeEnv === "development" ? { hsts: false } : {}),
+    }),
+  );
   app.use(
     cors({
       origin: (process.env.CORS_ORIGINS ?? "http://localhost:5173")

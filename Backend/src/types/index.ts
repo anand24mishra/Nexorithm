@@ -191,6 +191,8 @@ export interface DashboardStats {
 
 export interface DashboardRecentSubmission {
   id: string;
+  problemId: string;
+  slug: string;
   title: string;
   status: "ACCEPTED" | "WRONG ANSWER" | "TLE";
   timestamp: string;
@@ -199,6 +201,7 @@ export interface DashboardRecentSubmission {
 
 export interface DashboardRecommendation {
   id: string;
+  slug: string;
   title: string;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   tags: string[];
@@ -208,6 +211,7 @@ export interface DashboardRecommendation {
 export interface DashboardData {
   stats: DashboardStats;
   activityData: number[][];
+  activityTimestamps: string[];
   recentSubmissions: DashboardRecentSubmission[];
   recommendations: DashboardRecommendation[];
 }

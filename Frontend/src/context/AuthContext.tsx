@@ -1,12 +1,15 @@
 import { AuthContext } from './authState';
 import type { AuthState } from './authState';
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAuthToken,
   setAuthToken as setTokenStorage,
   removeAuthToken,
   authApi,
 } from "../api/authApi";
+import { isProtectedPath } from "../lib/protectedPath";
+import { markSessionExit, noteSessionStarted, scrubToPublic } from "../lib/sessionHistory";
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
@@ -45,43 +48,57 @@ function getInitialAuthState(): AuthState {
   return { token, isAuthenticated: true, username, isReady: true };
 }
 
+const loggedOutState: AuthState = {
+  token: null,
+  isAuthenticated: false,
+  username: null,
+  isReady: true,
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
   const [authState, setAuthState] = useState<AuthState>(getInitialAuthState);
 
   // Listen for 401 unauthorized events from fetchWithAuth
   useEffect(() => {
     const handleUnauthorized = () => {
+      markSessionExit();
       removeAuthToken();
-      setAuthState({
-        token: null,
-        isAuthenticated: false,
-        username: null,
-        isReady: true,
-      });
+      setAuthState(loggedOutState);
+      scrubToPublic(navigate);
     };
     window.addEventListener("auth_unauthorized", handleUnauthorized);
     return () =>
       window.removeEventListener("auth_unauthorized", handleUnauthorized);
+  }, [navigate]);
+
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted || getAuthToken()) return;
+      if (!isProtectedPath(window.location.pathname)) return;
+      window.location.replace("/");
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
 
   // Local login — stores token and updates auth state
   const login = useCallback((token: string, username: string) => {
+    noteSessionStarted();
     setTokenStorage(token);
     setAuthState({ token, isAuthenticated: true, username, isReady: true });
   }, []);
 
   const logout = useCallback(() => {
+    markSessionExit();
     removeAuthToken();
-    setAuthState({
-      token: null,
-      isAuthenticated: false,
-      username: null,
-      isReady: true,
-    });
-  }, []);
+    setAuthState(loggedOutState);
+    scrubToPublic(navigate);
+  }, [navigate]);
 
   const googleLogin = useCallback(async (credential: string) => {
     const res = await authApi.googleLogin(credential);
+    noteSessionStarted();
     setTokenStorage(res.token);
     setAuthState({
       token: res.token,

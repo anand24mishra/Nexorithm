@@ -1,5 +1,6 @@
 import type { Submission } from "../types";
 import { fetchWithAuth } from "./authApi";
+
 export interface SubmissionPage {
   submissions: Submission[];
   page: number;
@@ -34,7 +35,7 @@ export function normalizeSubmissionPage(
         pageBody.totalPages ?? (pageBody.submissions.length ? 1 : 0),
     };
   }
-  return { submissions: [], page: pageNumber, total: 0, totalPages: 0 };
+  throw new Error("Unexpected submissions response");
 }
 
 async function page(
@@ -45,12 +46,15 @@ async function page(
   const response = await fetchWithAuth(`${path}?page=${pageNumber}&limit=20`, {
     signal,
   });
-  if (response.status === 401 || response.status === 403)
-    return { submissions: [], page: pageNumber, total: 0, totalPages: 0 };
-  if (!response.ok)
+  if (response.status === 401 || response.status === 403) {
+    throw new Error("Sign in to see submissions.");
+  }
+  if (!response.ok) {
     throw new Error("Could not load submission history. Please retry.");
+  }
   return normalizeSubmissionPage(await response.json(), pageNumber);
 }
+
 export const submissionHistoryApi = {
   getPage: (pageNumber: number, problemId?: string, signal?: AbortSignal) =>
     page(

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import '../../monaco';
 import Editor from '@monaco-editor/react';
 import type { OnMount } from '@monaco-editor/react';
@@ -12,14 +12,24 @@ const LANGUAGES = [
   { value: Language.PYTHON,     label: 'Python'     },
 ];
 
-interface Props { problem: NexorithmProblem; }
+interface Props {
+  problem: NexorithmProblem;
+  codePaneVisible?: boolean;
+}
 
-export function NxEditorPanel({ problem }: Props) {
+export function NxEditorPanel({ problem, codePaneVisible = true }: Props) {
   const { state, dispatch } = useWorkspace();
   const [showReset, setShowReset] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
+
+  useEffect(() => {
+    if (!codePaneVisible) return;
+    editorRef.current?.layout();
+  }, [codePaneVisible]);
 
   const handleMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
     monaco.editor.defineTheme('nx-dark', {
       base: 'vs-dark',
       inherit: true,
@@ -51,10 +61,11 @@ export function NxEditorPanel({ problem }: Props) {
     monaco.editor.setTheme('nx-dark');
     editor.addAction({
       id: 'nx-run',
-      label: 'Run / Submit',
+      label: 'Run',
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
       run: () => { window.dispatchEvent(new Event('nx-run-code')); },
     });
+    editor.layout();
   };
 
   const handleReset = useCallback(() => {
@@ -75,8 +86,11 @@ export function NxEditorPanel({ problem }: Props) {
         {}
         <div className="relative">
           <button
+            type="button"
             onClick={() => setShowLangPicker((v) => !v)}
-            className="flex items-center gap-1.5 bg-surface-container-lowest px-2.5 py-1 rounded border border-outline-variant/15 text-xs font-bold text-primary hover:border-primary-container/50 transition-colors"
+            className="flex min-h-11 items-center gap-1.5 rounded border border-outline-variant/15 bg-surface-container-lowest px-2.5 text-xs font-bold text-primary hover:border-primary-container/50"
+            aria-expanded={showLangPicker}
+            aria-haspopup="listbox"
           >
             <span className="material-symbols-outlined text-[14px]">code</span>
             {currentLang?.label}
@@ -87,6 +101,7 @@ export function NxEditorPanel({ problem }: Props) {
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.value}
+                  type="button"
                   onClick={() => {
                     dispatch({ type: 'SET_LANGUAGE', payload: lang.value });
                     setShowLangPicker(false);
@@ -109,22 +124,25 @@ export function NxEditorPanel({ problem }: Props) {
           <span className="text-[10px] text-on-surface-variant/40 font-mono hidden sm:block">Auto-save: ON</span>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize - 1 })}
-              className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all text-[11px] font-bold"
-              title="Decrease font size"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded text-[11px] font-bold text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              aria-label="Decrease font size"
             >A-</button>
-            <span className="text-[10px] text-on-surface-variant/50 min-w-[20px] text-center">{state.fontSize}</span>
+            <span className="min-w-[20px] text-center text-[10px] text-on-surface-variant/50">{state.fontSize}</span>
             <button
+              type="button"
               onClick={() => dispatch({ type: 'SET_FONT_SIZE', payload: state.fontSize + 1 })}
-              className="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all text-[11px] font-bold"
-              title="Increase font size"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded text-[11px] font-bold text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              aria-label="Increase font size"
             >A+</button>
           </div>
           <div className="w-px h-4 bg-outline-variant/20" />
           <button
+            type="button"
             onClick={() => setShowReset(true)}
-            className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-all"
-            title="Reset code"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            aria-label="Reset code"
           >
             <span className="material-symbols-outlined text-[18px]">refresh</span>
           </button>

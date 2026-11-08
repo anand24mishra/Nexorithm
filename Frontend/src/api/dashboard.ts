@@ -1,4 +1,5 @@
 import { fetchWithAuth, API_BASE } from "./authApi";
+import { normalizeSubmissionPage } from "./submissionHistoryApi";
 import type { ProblemListItem, Submission } from "../types";
 
 export interface DashboardStats {
@@ -15,6 +16,8 @@ export interface DashboardStats {
 
 export interface DashboardRecentSubmission {
   id: string;
+  problemId?: string;
+  slug?: string;
   title: string;
   status: "ACCEPTED" | "WRONG ANSWER" | "TLE";
   timestamp: string;
@@ -23,6 +26,7 @@ export interface DashboardRecentSubmission {
 
 export interface DashboardRecommendation {
   id: string;
+  slug?: string;
   title: string;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   tags: string[];
@@ -32,6 +36,7 @@ export interface DashboardRecommendation {
 export interface DashboardData {
   stats: DashboardStats;
   activityData: number[][];
+  activityTimestamps?: string[];
   recentSubmissions: DashboardRecentSubmission[];
   recommendations: DashboardRecommendation[];
 }
@@ -113,9 +118,21 @@ async function buildDashboardFromLegacyEndpoints(): Promise<DashboardData> {
   if (!submissionsResponse.ok) {
     throw new Error("Failed to fetch submissions for dashboard fallback");
   }
-  const submissions = (await submissionsResponse.json()) as Submission[];
+  const submissionBody: unknown = await submissionsResponse.json();
+  const submissionPage = normalizeSubmissionPage(submissionBody, 1);
+  if (
+    !Array.isArray(submissionBody) &&
+    !(
+      submissionBody &&
+      typeof submissionBody === "object" &&
+      Array.isArray((submissionBody as { submissions?: unknown }).submissions)
+    )
+  ) {
+    throw new Error("Unexpected submissions response");
+  }
+  const submissions: Submission[] = submissionPage.submissions;
 
-  const problemsResponse = await fetch(`${API_BASE}/problems?page=1&limit=1000`);
+  const problemsResponse = await fetch(`${API_BASE}/problems?page=1&limit=100`);
   if (!problemsResponse.ok) {
     throw new Error("Failed to fetch problems for dashboard fallback");
   }
@@ -154,6 +171,8 @@ async function buildDashboardFromLegacyEndpoints(): Promise<DashboardData> {
       const p = problemMap.get(s.problemId);
       return {
         id: s.id,
+        problemId: s.problemId,
+        slug: p?.slug,
         title: p?.title || `Problem ${s.problemId}`,
         status: toStatusLabel(String(s.verdict)),
         timestamp: formatTimestamp(s.submittedAt),
@@ -171,6 +190,7 @@ async function buildDashboardFromLegacyEndpoints(): Promise<DashboardData> {
   const picks = [byDifficulty.easy[0], byDifficulty.medium[0], byDifficulty.hard[0]].filter(Boolean) as ProblemListItem[];
   const recommendations: DashboardRecommendation[] = picks.map((p) => ({
     id: p.id,
+    slug: p.slug,
     title: p.title,
     difficulty: String(p.difficulty).toUpperCase() as "EASY" | "MEDIUM" | "HARD",
     tags: (p.tags || []).slice(0, 3),
@@ -190,6 +210,9 @@ async function buildDashboardFromLegacyEndpoints(): Promise<DashboardData> {
       streak: calculateStreak(submissions),
     },
     activityData: buildHeatmap(submissions),
+    activityTimestamps: submissions
+      .map((submission) => new Date(submission.submittedAt).toISOString())
+      .filter((value) => value !== "Invalid Date"),
     recentSubmissions,
     recommendations,
   };

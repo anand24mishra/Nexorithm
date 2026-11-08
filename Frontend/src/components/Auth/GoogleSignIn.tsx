@@ -40,6 +40,25 @@ type Props = {
   onCredential: (credential: string) => void;
 };
 
+const initializedClientIds = new Set<string>();
+const credentialBridge: { current: (credential: string) => void } = {
+  current: () => {},
+};
+
+function ensureGoogleInitialized(clientId: string): void {
+  const google = window.google;
+  if (!google || initializedClientIds.has(clientId)) return;
+  google.accounts.id.initialize({
+    client_id: clientId,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    callback: (response) => {
+      if (response.credential) credentialBridge.current(response.credential);
+    },
+  });
+  initializedClientIds.add(clientId);
+}
+
 export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
   const slotRef = useRef<HTMLDivElement>(null);
   const onCredentialRef = useRef(onCredential);
@@ -49,6 +68,13 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
 
   useEffect(() => {
     onCredentialRef.current = onCredential;
+    const forward = (credential: string) => {
+      onCredentialRef.current(credential);
+    };
+    credentialBridge.current = forward;
+    return () => {
+      if (credentialBridge.current === forward) credentialBridge.current = () => {};
+    };
   }, [onCredential]);
 
   useEffect(() => {
@@ -65,17 +91,10 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
       const google = window.google;
       if (!slot || !google || cancelled) return false;
 
-      const width = Math.round(Math.min(Math.max(slot.clientWidth, 240), 400));
-      if (slot.childElementCount > 0 && Math.abs(width - paintedWidth) < 8) return true;
+      ensureGoogleInitialized(GOOGLE_CLIENT_ID);
 
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        callback: (response) => {
-          if (response.credential) onCredentialRef.current(response.credential);
-        },
-      });
+      const width = Math.round(Math.min(Math.max(slot.clientWidth, 240), 400));
+      if (slot.childElementCount > 0 && width === paintedWidth) return true;
 
       slot.innerHTML = "";
       paintedWidth = width;
@@ -136,13 +155,16 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
   }
 
   return (
-    <div className="auth-google" aria-busy={status === "loading"}>
-      {status === "loading" ? <div className="auth-google-skeleton" aria-hidden="true" /> : null}
-      <div
-        ref={slotRef}
-        className="auth-google-slot"
-        style={disabled ? { pointerEvents: "none", opacity: 0.55 } : undefined}
-      />
-    </div>
+    <>
+      <div className="auth-google" aria-busy={status === "loading"}>
+        {status === "loading" ? <div className="auth-google-skeleton" aria-hidden="true" /> : null}
+        <div
+          ref={slotRef}
+          className="auth-google-slot"
+          style={disabled ? { pointerEvents: "none", opacity: 0.55 } : undefined}
+        />
+      </div>
+      <div className="auth-divider">or</div>
+    </>
   );
 }

@@ -1,93 +1,195 @@
-import { useSubmissionHistory } from '../../hooks/useSubmissionHistory';
-import { VerdictBadge } from '../common/VerdictBadge';
-import type { Submission } from '../../types';
+import { useState } from "react";
+import {
+  formatRuntimeMs,
+  useSubmissionHistory,
+  verdictLabel,
+  verdictTone,
+} from "../../hooks/useSubmissionHistory";
+import type { Submission } from "../../types";
 
 interface Props {
   problemId?: string;
   onSelectSubmission?: (code: string) => void;
 }
 
-function formatDate(d: string | Date) {
-  return new Date(d).toLocaleString();
+const controlClass =
+  "inline-flex min-h-11 items-center justify-center border border-outline-variant bg-surface-container px-3 text-sm text-on-surface hover:bg-surface-container-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-container disabled:opacity-40";
+
+function formatDate(value: string | Date): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString();
+}
+
+function toneClass(label: string): string {
+  const tone = verdictTone(label);
+  if (tone === "accepted") return "text-secondary";
+  if (tone === "failure") return "text-error";
+  return "text-on-surface-variant";
+}
+
+function SubmissionRow({
+  submission,
+  showProblem,
+  onSelectSubmission,
+  open,
+  onToggleCode,
+}: {
+  submission: Submission;
+  showProblem: boolean;
+  onSelectSubmission?: (code: string) => void;
+  open: boolean;
+  onToggleCode: () => void;
+}) {
+  const label = verdictLabel(submission);
+  const runtime = formatRuntimeMs(submission.executionTimeMs);
+  const hasTests =
+    typeof submission.passedTestCases === "number" &&
+    typeof submission.totalTestCases === "number";
+  const hasCode = typeof submission.code === "string";
+  const body = (
+    <>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className={`font-mono text-sm ${toneClass(label)}`}>{label}</span>
+        <span className="font-mono text-xs text-outline">
+          {formatDate(submission.submittedAt)}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-on-surface-variant">
+        {showProblem && submission.problemId ? (
+          <span className="font-mono text-xs text-outline">
+            {submission.problemId}
+          </span>
+        ) : null}
+        {submission.language ? (
+          <span className="capitalize">{submission.language}</span>
+        ) : null}
+        <span className="font-mono">{runtime ?? "—"}</span>
+        {hasTests ? (
+          <span className="font-mono">
+            {submission.passedTestCases}/{submission.totalTestCases} passed
+          </span>
+        ) : null}
+      </div>
+      {onSelectSubmission && hasCode ? (
+        <span className="mt-2 block text-xs text-on-surface-variant">
+          Click to load this code
+        </span>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className="min-w-0 border border-outline-variant bg-surface-container px-4 py-3">
+      {onSelectSubmission ? (
+        <button
+          type="button"
+          className="w-full min-h-11 bg-transparent text-left"
+          onClick={() => {
+            if (hasCode) onSelectSubmission(submission.code);
+          }}
+        >
+          {body}
+        </button>
+      ) : (
+        body
+      )}
+      {!onSelectSubmission && hasCode ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            className={controlClass}
+            aria-expanded={open}
+            onClick={onToggleCode}
+          >
+            Review code
+          </button>
+          {open ? (
+            <pre className="mt-3 max-w-full overflow-x-auto bg-surface-container-high p-3 font-mono text-xs text-on-surface">
+              {submission.code}
+            </pre>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function SubmissionHistory({ problemId, onSelectSubmission }: Props) {
-  const { submissions, isLoading, error, page, totalPages, setPage, refresh } = useSubmissionHistory(problemId);
+  const { submissions, isLoading, error, page, totalPages, setPage, refresh } =
+    useSubmissionHistory(problemId);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
-      <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-        <span className="spinner" /> Loading submissions...
-      </div>
+      <p className="min-w-0 text-sm text-on-surface-variant">
+        Loading submissions…
+      </p>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '16px', color: 'var(--accent-red)', background: 'rgba(248,81,73,0.1)', borderRadius: 'var(--radius-md)' }}>
-        {error} <button onClick={refresh}>Retry history</button>
+      <div
+        role="alert"
+        className="min-w-0 border border-outline-variant bg-surface-container-low p-4 text-sm text-on-surface"
+      >
+        <p>{error}</p>
+        <button type="button" className={`${controlClass} mt-3`} onClick={refresh}>
+          Retry
+        </button>
       </div>
     );
   }
 
   if (submissions.length === 0) {
     return (
-      <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <div style={{ fontSize: '32px', marginBottom: '12px' }}>📭</div>
-        <div style={{ fontSize: '14px' }}>No submissions yet for this problem.</div>
-      </div>
+      <p className="min-w-0 py-6 text-sm text-on-surface-variant">
+        {problemId
+          ? "No submissions for this problem yet."
+          : "No submissions yet."}
+      </p>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <nav aria-label="Submission pages" style={{ display: 'flex', gap: 12 }}><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} of {Math.max(1, totalPages)}</span><button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button></nav>
-      {submissions.map((sub: Submission) => (
-        <div
-          key={sub.id}
-          style={{
-            background: 'var(--bg-tertiary)',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-primary)',
-            cursor: onSelectSubmission ? 'pointer' : 'default',
-            transition: 'border-color 0.15s, background 0.15s',
-          }}
-          onClick={() => onSelectSubmission?.(sub.code)}
-          onMouseEnter={(e) => {
-            if (onSelectSubmission) {
-              e.currentTarget.style.borderColor = 'var(--accent-blue)';
-              e.currentTarget.style.background = 'var(--bg-active)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-primary)';
-            e.currentTarget.style.background = 'var(--bg-tertiary)';
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <VerdictBadge verdict={sub.verdict || (sub.status === 'running' ? 'Running' : 'Queued')} />
-            <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
-              {formatDate(sub.submittedAt)}
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <span>
-              <span style={{ color: 'var(--text-muted)' }}>Lang: </span>
-              <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{sub.language}</span>
-            </span>
-            {sub.verdict === 'Accepted' ? (
-              <span style={{ color: 'var(--accent-green)' }}>⏱ {sub.executionTimeMs}ms</span>
-            ) : (
-              <span>{sub.passedTestCases}/{sub.totalTestCases} passed</span>
-            )}
-          </div>
-          {onSelectSubmission && (
-            <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--accent-blue)', opacity: 0.8 }}>
-              Click to load this code →
-            </div>
-          )}
-        </div>
+    <div className="flex min-w-0 flex-col gap-3">
+      {totalPages > 1 ? (
+        <nav aria-label="Submission pages" className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className={controlClass}
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </button>
+          <span className="font-mono text-sm text-on-surface-variant">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={controlClass}
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
+        </nav>
+      ) : null}
+      {submissions.map((submission) => (
+        <SubmissionRow
+          key={submission.id}
+          submission={submission}
+          showProblem={!problemId}
+          onSelectSubmission={onSelectSubmission}
+          open={openId === submission.id}
+          onToggleCode={() =>
+            setOpenId((current) =>
+              current === submission.id ? null : submission.id,
+            )
+          }
+        />
       ))}
     </div>
   );

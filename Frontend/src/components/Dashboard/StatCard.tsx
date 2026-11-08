@@ -8,24 +8,14 @@ interface StatCardProps {
   icon?: ReactNode;
 }
 
-export function StatCard({
-  title,
-  value,
-  subtitle,
-  children,
-  icon,
-}: StatCardProps) {
+export function StatCard({ title, value, subtitle, children, icon }: StatCardProps) {
   return (
-    <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6 hover:border-[#ffa116]/40 transition-all">
-      {icon && <div className="mb-4">{icon}</div>}
-      <span className="text-sm font-semibold text-[#D9C3AD] opacity-70 uppercase tracking-wider block mb-4">
-        {title}
-      </span>
-      <div className="text-4xl font-bold mb-4">{value}</div>
-      {subtitle && (
-        <p className="text-sm text-[#D9C3AD] opacity-60">{subtitle}</p>
-      )}
-      {children}
-    </div>
+    <section className="min-w-0 border border-outline-variant bg-surface-container-low p-5">
+      {icon ? <div className="mb-4">{icon}</div> : null}
+      <h2 className="text-sm text-on-surface-variant">{title}</h2>
+      <p className="mt-3 font-mono text-3xl text-on-surface">{value}</p>
+      {subtitle ? <p className="mt-2 text-sm text-on-surface-variant">{subtitle}</p> : null}
+      {children ? <div className="mt-4">{children}</div> : null}
+    </section>
   );
 }

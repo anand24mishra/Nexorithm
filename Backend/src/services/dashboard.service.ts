@@ -66,6 +66,8 @@ export class DashboardService {
         const p = problemMap.get(s.problemId);
         return {
           id: s.id,
+          problemId: s.problemId,
+          slug: p?.slug || "",
           title: p?.title || `Problem ${s.problemId}`,
           status: this.toStatusLabel(s.verdict),
           timestamp: this.formatTimestamp(s.submittedAt),
@@ -94,6 +96,7 @@ export class DashboardService {
 
     const recommendations: DashboardRecommendation[] = picks.map((p) => ({
       id: p.id,
+      slug: p.slug,
       title: p.title,
       difficulty: String(p.difficulty).toUpperCase() as
         "EASY" | "MEDIUM" | "HARD",
@@ -114,6 +117,9 @@ export class DashboardService {
         streak: this.calculateStreak(submissions),
       },
       activityData: this.buildHeatmap(submissions),
+      activityTimestamps: submissions
+        .map((submission) => new Date(submission.submittedAt).toISOString())
+        .filter((value) => value !== "Invalid Date"),
       recentSubmissions,
       recommendations,
     };

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import "../middleware/auth.middleware";
 import { SubmissionService } from "../services/submission.service";
 export class SubmissionController {
   constructor(private readonly service: SubmissionService) {}
@@ -25,6 +26,24 @@ export class SubmissionController {
           req.user!.userId,
         ),
       );
+    } catch (e) {
+      next(e);
+    }
+  };
+  getAnalytics = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const problemId =
+        typeof req.query.problemId === "string"
+          ? req.query.problemId
+          : undefined;
+      res.json(await this.service.analytics(req.user!.userId, problemId));
+    } catch (e) {
+      next(e);
+    }
+  };
+  getActivity = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json(await this.service.activity(req.user!.userId));
     } catch (e) {
       next(e);
     }

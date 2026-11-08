@@ -33,12 +33,11 @@ export function AuthScreen({ title, lead, error, google, footer, children }: Pro
           <h2>{title}</h2>
           <p className="auth-lead">{lead}</p>
           {error ? (
-            <div className="auth-error" role="alert">
+            <div id="auth-form-error" className="auth-error" role="alert">
               {error}
             </div>
           ) : null}
           {google}
-          <div className="auth-divider">or</div>
           {children}
           <p className="auth-switch">{footer}</p>
         </div>

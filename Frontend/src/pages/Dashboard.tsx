@@ -1,252 +1,227 @@
-import { useState } from "react";
-import { Flame } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Sidebar,
-  TopBar,
-  StatCard,
-  SubmissionItem,
-  RecommendationCard,
-} from "../components/Dashboard";
+import { Link } from "react-router-dom";
+import { AppShell } from "../components/Layout/AppShell";
+import { StatCard, SubmissionItem, RecommendationCard } from "../components/Dashboard";
 import { useDashboard } from "../hooks/useDashboard";
 import { useAuth } from "../context/authState";
+import {
+  activityLabel,
+  activityTotal,
+  buildActivityWeeks,
+  formatActivityDate,
+  type ActivityCell,
+} from "../components/Activity/activityGrid";
+
+function activityLevelClass(count: number, future: boolean): string {
+  if (future) return "bg-surface-container";
+  if (count >= 7) return "bg-secondary";
+  if (count >= 4) return "bg-secondary/80";
+  if (count >= 2) return "bg-secondary/60";
+  if (count >= 1) return "bg-secondary/40";
+  return "bg-surface-container-high";
+}
+
+function cellName(cell: ActivityCell): string {
+  if (cell.future) return `${formatActivityDate(cell.date)}: upcoming`;
+  return activityLabel(cell);
+}
 
 export function Dashboard() {
-  const navigate = useNavigate();
   const { username } = useAuth();
   const { data, isLoading, error, refresh } = useDashboard();
-  const [activeNav, setActiveNav] = useState("dashboard");
 
   const stats = data?.stats;
-  const activityData = data?.activityData || [];
-  const recentSubmissions = data?.recentSubmissions || [];
-  const recommendations = data?.recommendations || [];
-
-  const onNavChange = (id: string) => {
-    setActiveNav(id);
-    if (id === "dashboard") navigate("/dashboard");
-    if (id === "problems") navigate("/");
-    if (id === "profile") navigate("/submissions");
-  };
+  const activityWeeks = buildActivityWeeks(data?.activityTimestamps ?? []);
+  const activityCount = activityTotal(activityWeeks.flat());
+  const recentSubmissions = data?.recentSubmissions ?? [];
+  const recommendations = data?.recommendations ?? [];
 
   return (
-    <div className="min-h-screen bg-background text-[#E5E2E1] font-body">
-      <TopBar />
-      <Sidebar activeNav={activeNav} onNavChange={onNavChange} />
+    <AppShell title="Dashboard">
+      <div className="mx-auto min-w-0 max-w-[1400px] space-y-10 px-4 py-8 lg:px-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-on-surface sm:text-3xl">Dashboard</h1>
+          <p className="mt-3 break-words text-base text-on-surface">
+            {username ? <span>{username}. </span> : null}
+            {data && stats ? (
+              <>
+                <span className="font-mono">{stats.solved}</span>
+                {" solved of "}
+                <span className="font-mono">{stats.totalProblems}</span>
+                {" problems."}
+              </>
+            ) : isLoading ? (
+              "Loading solved totals."
+            ) : (
+              "Solved totals are unavailable."
+            )}
+          </p>
+        </div>
 
-      <main className="pt-14 min-h-screen lg:ml-64">
-        <div className="max-w-[1400px] mx-auto p-8 space-y-8">
-          {/* Welcome Section */}
-          <div>
-            <h1 className="text-4xl font-bold mb-2">
-              Welcome back, {username || "Coder"}
-            </h1>
-            <p className="text-[#D9C3AD] opacity-70">
-              Your cognitive flow is peaking. Ready to tackle today's
-              algorithmic challenges?
-            </p>
-          </div>
+        {isLoading && !data ? (
+          <p className="text-sm text-on-surface-variant">Loading dashboard.</p>
+        ) : null}
 
-          {isLoading && (
-            <div className="rounded-xl border border-[#2A2A2A] bg-[#1C1B1B] p-5 text-sm text-[#D9C3AD]">
-              Loading dashboard insights...
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-xl border border-red-700/40 bg-red-900/20 p-5 text-sm text-red-200 flex items-center justify-between gap-4">
-              <span>{error}</span>
-              <button
-                onClick={refresh}
-                className="rounded-md bg-[#ffa116] px-3 py-1.5 text-xs font-semibold text-black hover:opacity-90"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            {/* Problems Solved */}
-            <StatCard title="Problems Solved" value={stats?.solved ?? 0}>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-emerald-400">Easy</span>
-                  <span className="font-semibold">{stats?.easy ?? 0}</span>
-                </div>
-                <div className="h-1 bg-[#2A2A2A] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500"
-                    style={{
-                      width: `${stats?.solved ? (stats.easy / stats.solved) * 100 : 0}%`,
-                    }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-orange-400">Medium</span>
-                  <span className="font-semibold">{stats?.medium ?? 0}</span>
-                </div>
-                <div className="h-1 bg-[#2A2A2A] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-orange-500"
-                    style={{
-                      width: `${stats?.solved ? (stats.medium / stats.solved) * 100 : 0}%`,
-                    }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-red-400">Hard</span>
-                  <span className="font-semibold">{stats?.hard ?? 0}</span>
-                </div>
-                <div className="h-1 bg-[#2A2A2A] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-red-500"
-                    style={{
-                      width: `${stats?.solved ? (stats.hard / stats.solved) * 100 : 0}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            </StatCard>
-
-            <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6 hover:border-[#ffa116]/40 transition-all flex flex-col items-center justify-center text-center">
-              <span className="text-sm font-semibold text-[#D9C3AD] opacity-70 uppercase tracking-wider mb-4">
-                Problems stored
-              </span>
-              <div className="text-5xl font-bold text-[#ffa116] mb-2">
-                {stats?.totalProblems ?? 0}
-              </div>
-              <p className="text-sm text-[#D9C3AD]">
-                Count of problems in this database. There is no global rank.
-              </p>
-            </div>
-
-            {/* Acceptance Rate */}
-            <StatCard
-              title="Acceptance Rate"
-              value={`${stats?.acceptance ?? 0}%`}
+        {error ? (
+          <div className="flex min-w-0 flex-col gap-3 border border-outline-variant bg-surface-container-low p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0 text-sm text-error">{error}</p>
+            <button
+              type="button"
+              onClick={refresh}
+              className="min-h-11 shrink-0 border border-outline-variant px-3 text-sm text-on-surface"
             >
-              <div className="relative h-24 flex items-center justify-center">
-                <svg className="w-20 h-20" viewBox="0 0 100 100">
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-[#2A2A2A]"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    strokeDasharray={`${((stats?.acceptance ?? 0) / 100) * 282.7} 282.7`}
-                    strokeLinecap="round"
-                    className="text-[#ffa116] transform -rotate-90"
-                    style={{ transformOrigin: "50% 50%" }}
-                  />
-                </svg>
-              </div>
-            </StatCard>
-
-            {/* Current Streak */}
-            <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6 hover:border-[#ffa116]/40 transition-all flex flex-col items-center justify-center text-center">
-              <Flame className="w-8 h-8 text-[#ffa116] mb-3" />
-              <span className="text-sm font-semibold text-[#D9C3AD] opacity-70 uppercase tracking-wider mb-4">
-                Current Streak
-              </span>
-              <div className="text-5xl font-bold text-[#ffa116]">
-                {stats?.streak ?? 0}
-              </div>
-              <div className="text-xs text-[#D9C3AD] opacity-60 mt-2">Days</div>
-            </div>
+              Retry
+            </button>
           </div>
+        ) : null}
 
-          {/* Activity Heatmap Section */}
-          <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold">Submission Activity</h2>
-              <p className="text-sm text-[#D9C3AD] opacity-60">Last 52 weeks</p>
+        {data && stats ? (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard title="Problems solved" value={stats.solved}>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-secondary">Easy</dt>
+                    <dd className="font-mono text-on-surface">{stats.easy}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-primary-container">Medium</dt>
+                    <dd className="font-mono text-on-surface">{stats.medium}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-error">Hard</dt>
+                    <dd className="font-mono text-on-surface">{stats.hard}</dd>
+                  </div>
+                </dl>
+              </StatCard>
+              <StatCard
+                title="Problems stored"
+                value={stats.totalProblems}
+                subtitle="Problems in this catalog."
+              />
+              <StatCard title="Acceptance rate" value={`${stats.acceptance}%`} />
+              <StatCard title="Current streak" value={stats.streak} subtitle="Days" />
             </div>
-            <div className="overflow-x-auto">
-              <div className="flex gap-1 py-4">
-                {activityData.map((week, weekIdx) => (
-                  <div key={weekIdx} className="flex flex-col gap-1">
-                    {week.map((active, dayIdx) => (
-                      <div
-                        key={dayIdx}
-                        className={`w-3 h-3 rounded-sm transition-all hover:scale-150 cursor-pointer ${
-                          active === 4
-                            ? "bg-[#ffa116]"
-                            : active === 3
-                              ? "bg-[#ffa116]/90"
-                              : active === 2
-                                ? "bg-[#ffa116]/70"
-                                : active === 1
-                                  ? "bg-[#ffa116]/40"
-                                  : "bg-[#2A2A2A] hover:opacity-90"
-                        }`}
-                        title={
-                          active > 0
-                            ? `${active} submissions`
-                            : "No submissions"
-                        }
-                      ></div>
+
+            <section className="min-w-0 border border-outline-variant bg-surface-container-low p-4 sm:p-6">
+              <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="min-w-0">
+                  <h2 className="text-lg text-on-surface">Submission activity</h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    <span className="font-mono text-on-surface">{activityCount}</span>
+                    {activityCount === 1 ? " submission" : " submissions"} in the last 52 weeks
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-on-surface-variant">
+                  <span>Less</span>
+                  <span className="h-3 w-3 bg-surface-container-high" />
+                  <span className="h-3 w-3 bg-secondary/40" />
+                  <span className="h-3 w-3 bg-secondary/60" />
+                  <span className="h-3 w-3 bg-secondary" />
+                  <span>More</span>
+                </div>
+              </div>
+              <div className="min-w-0 overflow-x-auto">
+                <div className="flex gap-2 py-2">
+                  <div className="flex flex-col gap-1 pt-4 text-[9px] leading-3 text-on-surface-variant">
+                    {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
+                      <span key={index} className="h-3">
+                        {label}
+                      </span>
                     ))}
                   </div>
-                ))}
+                  <div>
+                    <div className="flex h-4 gap-1">
+                      {activityWeeks.map((week, weekIdx) => {
+                        const month = new Date(
+                          Number(week[0].date.slice(0, 4)),
+                          Number(week[0].date.slice(5, 7)) - 1,
+                          1,
+                        ).toLocaleDateString(undefined, { month: "short" });
+                        const previous = activityWeeks[weekIdx - 1];
+                        const showMonth =
+                          !previous || previous[0].date.slice(0, 7) !== week[0].date.slice(0, 7);
+                        return (
+                          <span key={week[0].date} className="w-3 text-[9px] leading-3 text-on-surface-variant">
+                            {showMonth ? month : ""}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-1">
+                      {activityWeeks.map((week) => (
+                        <div key={week[0].date} className="flex flex-col gap-1">
+                          {week.map((cell) => {
+                            const label = cellName(cell);
+                            return (
+                              <div
+                                key={cell.date}
+                                role="img"
+                                className={`h-3 w-3 ${activityLevelClass(cell.count, cell.future)}`}
+                                title={label}
+                                aria-label={label}
+                              />
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </section>
 
-          {/* Bottom Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Submissions */}
-            <div className="col-span-2 bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold">Recent Submissions</h2>
-                <Link
-                  to="/submissions"
-                  className="text-[#ffa116] hover:opacity-90 text-sm font-semibold uppercase tracking-wider"
-                >
-                  View All
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {recentSubmissions.map((submission) => (
-                  <SubmissionItem
-                    key={submission.id}
-                    title={submission.title}
-                    status={submission.status}
-                    timestamp={submission.timestamp}
-                    language={submission.language}
-                  />
-                ))}
-              </div>
-            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <section className="min-w-0 border border-outline-variant bg-surface-container-low p-4 sm:p-6 lg:col-span-2">
+                <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-lg text-on-surface">Recent submissions</h2>
+                  <Link
+                    to="/submissions"
+                    className="inline-flex min-h-11 items-center text-sm text-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-container"
+                  >
+                    View all
+                  </Link>
+                </div>
+                {recentSubmissions.length === 0 ? (
+                  <p className="text-sm text-on-surface-variant">No recent submissions yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentSubmissions.map((submission) => (
+                      <SubmissionItem
+                        key={submission.id}
+                        title={submission.title}
+                        status={submission.status}
+                        timestamp={submission.timestamp}
+                        language={submission.language}
+                        slug={submission.slug}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
 
-            {/* Curated for You */}
-            <div className="bg-[#1C1B1B] border border-[#2A2A2A] rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-6">Curated for You</h2>
-              <div className="space-y-4">
-                {recommendations.map((problem) => (
-                  <RecommendationCard
-                    key={problem.id}
-                    title={problem.title}
-                    difficulty={problem.difficulty}
-                    tags={problem.tags}
-                    acceptance={problem.acceptance}
-                  />
-                ))}
-              </div>
+              <section className="min-w-0 border border-outline-variant bg-surface-container-low p-4 sm:p-6">
+                <h2 className="mb-4 text-lg text-on-surface">Recommendations</h2>
+                {recommendations.length === 0 ? (
+                  <p className="text-sm text-on-surface-variant">No recommendations yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {recommendations.map((problem) => (
+                      <RecommendationCard
+                        key={problem.id}
+                        title={problem.title}
+                        difficulty={problem.difficulty}
+                        tags={problem.tags}
+                        acceptance={problem.acceptance}
+                        slug={problem.slug}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
-          </div>
-        </div>
-      </main>
-    </div>
+          </>
+        ) : null}
+      </div>
+    </AppShell>
   );
 }

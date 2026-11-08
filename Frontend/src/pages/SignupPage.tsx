@@ -21,7 +21,7 @@ export function SignupPage() {
     setLoading(true);
     try {
       await googleLogin(credential);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-up failed");
     } finally {
@@ -36,7 +36,7 @@ export function SignupPage() {
     try {
       const res = await authApi.register(username, email, password);
       login(res.token, res.user.username);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -57,8 +57,10 @@ export function SignupPage() {
       }
     >
       <form onSubmit={handleSubmit} className="auth-form">
-        <label className="auth-field" htmlFor="signup-username">
-          <span>Username</span>
+        <div className="auth-field">
+          <label htmlFor="signup-username">
+            <span>Username</span>
+          </label>
           <input
             id="signup-username"
             type="text"
@@ -68,12 +70,21 @@ export function SignupPage() {
             autoComplete="username"
             minLength={2}
             maxLength={40}
-            pattern="[A-Za-z0-9_]+"
+            pattern="[A-Za-z0-9_]{2,40}"
             required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={
+              error ? "signup-username-hint auth-form-error" : "signup-username-hint"
+            }
           />
-        </label>
-        <label className="auth-field" htmlFor="signup-email">
-          <span>Email</span>
+          <p id="signup-username-hint" className="auth-hint">
+            Letters, numbers, and underscores, 2–40 characters.
+          </p>
+        </div>
+        <div className="auth-field">
+          <label htmlFor="signup-email">
+            <span>Email</span>
+          </label>
           <input
             id="signup-email"
             type="email"
@@ -82,8 +93,10 @@ export function SignupPage() {
             placeholder="you@example.com"
             autoComplete="email"
             required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "auth-form-error" : undefined}
           />
-        </label>
+        </div>
         <div className="auth-field">
           <label htmlFor="signup-password">
             <span>Password</span>
@@ -97,18 +110,26 @@ export function SignupPage() {
               placeholder="At least 8 characters"
               autoComplete="new-password"
               minLength={8}
+              maxLength={72}
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={
+                error ? "signup-password-hint auth-form-error" : "signup-password-hint"
+              }
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
+          <p id="signup-password-hint" className="auth-hint">
+            8–72 characters.
+          </p>
         </div>
-        <p className="auth-hint">8–72 characters. Username can use letters, numbers, and underscores.</p>
         <button type="submit" className="auth-submit" disabled={loading}>
           {loading ? "Creating account…" : "Create account"}
         </button>

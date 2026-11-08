@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWorkspace } from "../context/workspaceState";
 import { useAuth } from "../context/authState";
 import { submissionApi } from "../api/submissionApi";
@@ -6,32 +6,51 @@ import { pollSubmission } from "./pollSubmission";
 import { Verdict } from "../types";
 
 const SIGN_IN = "Sign in to submit your code.";
+const EMPTY_SOLUTION = "The solution is empty.";
+const MAX_SOLUTION = "Enter a solution of at most 64 KB.";
 
 export function useSubmission() {
   const { state, dispatch, activeSubmission: active } = useWorkspace();
   const { isAuthenticated } = useAuth();
   const pending = useRef<{ id: string; submit: boolean } | null>(null);
+  const [retryable, setRetryable] = useState(false);
   useEffect(
     () => () => {
       active.current?.abort();
       active.current = null;
       pending.current = null;
+      setRetryable(false);
     },
     [state.problemId, active],
   );
   const perform = useCallback(
     async (submit: boolean, resume = false) => {
       if (active.current || !state.problemId) return;
-      if (
-        !resume &&
-        (!state.code.trim() ||
-          new TextEncoder().encode(state.code).length > 65536)
-      ) {
-        dispatch({
-          type: submit ? "SUBMIT_ERROR" : "RUN_ERROR",
-          payload: "Enter a solution of at most 64 KB.",
-        });
-        return;
+      if (document.querySelector("[data-nx-modal-open]")) return;
+      if (!resume) {
+        pending.current = null;
+        setRetryable(false);
+        if (!state.code.trim()) {
+          dispatch({
+            type: submit ? "SUBMIT_ERROR" : "RUN_ERROR",
+            payload: EMPTY_SOLUTION,
+          });
+          return;
+        }
+        if (new TextEncoder().encode(state.code).length > 65536) {
+          dispatch({
+            type: submit ? "SUBMIT_ERROR" : "RUN_ERROR",
+            payload: MAX_SOLUTION,
+          });
+          return;
+        }
+        if (!isAuthenticated) {
+          dispatch({
+            type: submit ? "SUBMIT_ERROR" : "RUN_ERROR",
+            payload: SIGN_IN,
+          });
+          return;
+        }
       }
       const controller = new AbortController();
       active.current = controller;
@@ -59,11 +78,14 @@ export function useSubmission() {
             payload: ack.result,
           });
           pending.current = null;
+          setRetryable(false);
           window.dispatchEvent(new Event("submission-updated"));
           return;
         }
         const id = ack.submissionId;
         if (!id) {
+          pending.current = null;
+          setRetryable(false);
           throw new Error(
             isAuthenticated
               ? "Submission response did not include an id."
@@ -71,6 +93,7 @@ export function useSubmission() {
           );
         }
         pending.current = { id, submit };
+        setRetryable(true);
         dispatch({
           type: "SUBMISSION_STATUS",
           payload: "Queued — waiting for a judge…",
@@ -103,6 +126,7 @@ export function useSubmission() {
           },
         });
         pending.current = null;
+        setRetryable(false);
         window.dispatchEvent(new Event("submission-updated"));
       } catch (error) {
         if (!controller.signal.aborted)
@@ -134,10 +158,10 @@ export function useSubmission() {
       void perform(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        event.preventDefault();
-        void perform(false);
-      }
+      if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
+      event.preventDefault();
+      if (event.repeat) return;
+      void perform(false);
     };
     window.addEventListener("retry-submission-status", retryStatus);
     window.addEventListener("nx-run-code", onRun);
@@ -152,7 +176,7 @@ export function useSubmission() {
     runCode: () => perform(false),
     submitCode: () => perform(true),
     retryStatus,
-    canRetryStatus: !!pending.current,
+    canRetryStatus: retryable,
     isRunning: state.isRunning,
     isSubmitting: state.isSubmitting,
   };

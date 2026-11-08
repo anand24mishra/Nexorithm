@@ -1,12 +1,18 @@
-import { SubmissionHistory } from '../components/SubmissionHistory/SubmissionHistory';
+import { AppShell } from "../components/Layout/AppShell";
+import { SubmissionHistory } from "../components/SubmissionHistory/SubmissionHistory";
 
 export function GlobalSubmissionsPage() {
   return (
-    <div className="min-h-screen bg-background text-on-background font-body p-8">
-      <div className="max-w-[800px] mx-auto bg-surface-container-low rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-6">Global Submissions</h1>
-        <SubmissionHistory />
+    <AppShell title="Submissions">
+      <div className="min-w-0 px-4 py-6 sm:px-8">
+        <h1 className="text-2xl font-semibold text-on-surface">Submissions</h1>
+        <p className="mt-2 max-w-2xl text-sm text-on-surface-variant">
+          Runs saved on your account.
+        </p>
+        <div className="mt-6 min-w-0">
+          <SubmissionHistory />
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

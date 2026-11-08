@@ -14,13 +14,14 @@ export function LoginPage() {
 
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
+  const describedBy = error ? "auth-form-error" : undefined;
 
   const handleGoogle = async (credential: string) => {
     setError("");
     setLoading(true);
     try {
       await googleLogin(credential);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
@@ -35,7 +36,7 @@ export function LoginPage() {
     try {
       const res = await authApi.login(email, password);
       login(res.token, res.user.username);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -56,8 +57,10 @@ export function LoginPage() {
       }
     >
       <form onSubmit={handleSubmit} className="auth-form">
-        <label className="auth-field" htmlFor="login-email">
-          <span>Email</span>
+        <div className="auth-field">
+          <label htmlFor="login-email">
+            <span>Email</span>
+          </label>
           <input
             id="login-email"
             type="email"
@@ -66,8 +69,10 @@ export function LoginPage() {
             placeholder="you@example.com"
             autoComplete="email"
             required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={describedBy}
           />
-        </label>
+        </div>
         <div className="auth-field">
           <label htmlFor="login-password">
             <span>Password</span>
@@ -81,11 +86,14 @@ export function LoginPage() {
               placeholder="Your password"
               autoComplete="current-password"
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={describedBy}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? "Hide" : "Show"}
             </button>

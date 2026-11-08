@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import type { NexorithmProblem } from '../../types';
 import { SubmissionHistory } from '../SubmissionHistory/SubmissionHistory';
@@ -29,8 +30,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
 
   const isSubmissions = activeTab === 'submissions';
   const isEditorial = activeTab === 'editorial';
-  const isSolutions = activeTab === 'solutions';
-  const showArticle = isEditorial || isSolutions;
+  const showArticle = isEditorial;
   const [articleBlocks, setArticleBlocks] = useState<EditorialBlock[]>([]);
   const [articleError, setArticleError] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
@@ -53,7 +53,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
     return () => controller.abort();
   }, [problem.slug, showArticle]);
 
-  const panelTitle = isSubmissions ? 'Submissions' : isEditorial ? 'Editorial' : isSolutions ? 'Solutions' : 'Description';
+  const panelTitle = isSubmissions ? 'Submissions' : isEditorial ? 'Editorial' : 'Description';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -72,7 +72,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
           <div>
             {articleLoading && (
               <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span className="spinner" /> {isEditorial ? 'Loading editorial…' : 'Loading solution…'}
+                <span className="spinner" /> Loading editorial…
               </div>
             )}
             {articleError && <p className="text-sm text-error">{articleError}</p>}
@@ -81,9 +81,7 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
             )}
             {!articleLoading && articleReady && !articleError && articleBlocks.length === 0 && (
               <p className="text-sm text-on-surface-variant">
-                {isEditorial
-                  ? 'No editorial is available for this problem.'
-                  : 'No solution is available for this problem.'}
+                No editorial is available for this problem.
               </p>
             )}
           </div>
@@ -160,10 +158,16 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
 
         {}
         {isSubmissions && (
-          <div>
-            <p className="text-xs text-on-surface-variant/60 mb-4">
+          <div className="space-y-3">
+            <p className="text-xs text-on-surface-variant">
               Click any submission to load its code into the editor.
             </p>
+            <Link
+              to={`/problem/${problem.slug}/analytics`}
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-primary-container"
+            >
+              View analytics
+            </Link>
             <SubmissionHistory
               problemId={problem.id}
               onSelectSubmission={handleLoadSubmission}
