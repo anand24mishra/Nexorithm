@@ -1,6 +1,7 @@
 import { IProblemRepository } from "../interfaces/IProblemRepository";
 import { NexorithmProblem, ProblemListItem, ProblemListParams } from "../types";
 import { seedProblems } from "../data/seedProblems";
+import { applyAuthoritativeSuite } from "../services/exampleSuite";
 
 export class MockProblemRepository implements IProblemRepository {
   private problems: NexorithmProblem[] = [...seedProblems];
@@ -52,11 +53,13 @@ export class MockProblemRepository implements IProblemRepository {
   }
 
   async findBySlug(slug: string): Promise<NexorithmProblem | null> {
-    return this.problems.find((p) => p.slug === slug) ?? null;
+    const found = this.problems.find((p) => p.slug === slug);
+    return found ? applyAuthoritativeSuite(found) : null;
   }
 
   async findById(id: string): Promise<NexorithmProblem | null> {
-    return this.problems.find((p) => p.id === id) ?? null;
+    const found = this.problems.find((p) => p.id === id);
+    return found ? applyAuthoritativeSuite(found) : null;
   }
 
   async upsert(problem: NexorithmProblem): Promise<void> {

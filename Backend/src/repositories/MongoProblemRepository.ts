@@ -1,6 +1,7 @@
 import { IProblemRepository } from "../interfaces/IProblemRepository";
 import { NexorithmProblem, ProblemListItem, ProblemListParams } from "../types";
 import { ProblemModel } from "../models/Problem.model";
+import { applyAuthoritativeSuite } from "../services/exampleSuite";
 
 export class MongoProblemRepository implements IProblemRepository {
   async findAll(
@@ -87,7 +88,7 @@ export class MongoProblemRepository implements IProblemRepository {
     const testCases =
       (doc["testCases"] as Array<Record<string, unknown>>) ?? [];
 
-    return {
+    return applyAuthoritativeSuite({
       execution: doc["execution"] as NexorithmProblem["execution"],
       id: String(doc["id"] ?? ""),
       slug: String(doc["slug"] ?? ""),
@@ -110,6 +111,6 @@ export class MongoProblemRepository implements IProblemRepository {
       sampleOutput: String(doc["sampleOutput"] ?? ""),
       hints: (doc["hints"] as string[]) ?? [],
       acRate: Number(doc["acRate"] ?? 0),
-    };
+    });
   }
 }

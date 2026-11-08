@@ -9,6 +9,7 @@ import {
 
 import { seedProblems } from "../data/seedProblems";
 import { buildEditorial, EditorialBlock } from "./editorial";
+import { applyAuthoritativeSuite } from "./exampleSuite";
 export class ProblemService {
   private readonly editorialCache = new Map<
     string,
@@ -163,7 +164,9 @@ export class ProblemService {
     const data = raw as Record<string, unknown>;
 
     const slug =
-      (data["titleSlug"] as string) ?? (data["title_slug"] as string) ?? "";
+      (data["titleSlug"] as string) ??
+      (data["title_slug"] as string) ??
+      slugFromUrl(data["url"]);
     const title = (data["title"] as string) ?? "";
     if (!slug || !title) return null;
 
@@ -206,7 +209,7 @@ export class ProblemService {
       (data["id"] as string) ??
       "";
 
-    return {
+    return applyAuthoritativeSuite({
       id: questionId,
       slug,
       title,
@@ -214,12 +217,12 @@ export class ProblemService {
       content,
       tags,
       starterCode,
-      testCases: seed ? seed.testCases : [],
-      sampleInput: sampleTestCase,
-      sampleOutput: "",
+      testCases: seed?.testCases ?? [],
+      sampleInput: sampleTestCase || seed?.sampleInput || "",
+      sampleOutput: seed?.sampleOutput || "",
       hints,
       acRate: Number(data["acRate"] ?? 0),
-    };
+    });
   }
 
   private mapGraphQLToProblem(raw: unknown): NexorithmProblem | null {
@@ -265,7 +268,7 @@ export class ProblemService {
       (data["questionId"] as string) ??
       "";
 
-    return {
+    return applyAuthoritativeSuite({
       id: questionId,
       slug,
       title,
@@ -273,11 +276,16 @@ export class ProblemService {
       content,
       tags,
       starterCode,
-      testCases: seed ? seed.testCases : [],
-      sampleInput: sampleTestCase,
-      sampleOutput: "",
+      testCases: seed?.testCases ?? [],
+      sampleInput: sampleTestCase || seed?.sampleInput || "",
+      sampleOutput: seed?.sampleOutput || "",
       hints,
       acRate: 0,
-    };
+    });
   }
+}
+
+function slugFromUrl(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.match(/\/problems\/([a-z0-9-]+)\/?/i)?.[1] ?? "";
 }
