@@ -101,12 +101,12 @@ export function GoogleSignIn({ text, disabled = false, onCredential }: Props) {
       slot.replaceChildren();
       paintedWidth = slotWidth;
       google.accounts.id.renderButton(slot, {
-        theme: "filled_black",
+        theme: "outline",
         size: "large",
         width: slotWidth,
         text,
         shape: "rectangular",
-        logo_alignment: "center",
+        logo_alignment: "left",
       });
       setStatus("ready");
       return true;

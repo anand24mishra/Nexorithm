@@ -277,7 +277,7 @@
   overflow: hidden;
   border-radius: 999px;
   line-height: 0;
-  background: #131314;
+  background: #fff;
 }
 
 .auth-google-slot iframe {
