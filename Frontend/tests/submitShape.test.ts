@@ -34,10 +34,7 @@ it("keeps the queued submission id from the async contract", () => {
 });
 
 it("reads a raw submission array as one history page", () => {
-  const page = normalizeSubmissionPage(
-    [{ id: "1", verdict: "Accepted" }],
-    1,
-  );
+  const page = normalizeSubmissionPage([{ id: "1", verdict: "Accepted" }], 1);
   expect(page.submissions).toHaveLength(1);
   expect(page.totalPages).toBe(1);
 });
