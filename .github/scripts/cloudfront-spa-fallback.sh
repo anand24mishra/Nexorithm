@@ -43,14 +43,33 @@ if [[ -z "${BUCKET:-}" ]]; then
   exit 1
 fi
 
-routes=(login signup dashboard submissions analytics)
-for route in "${routes[@]}"; do
-  aws s3 cp "s3://$BUCKET/index.html" "s3://$BUCKET/$route" \
+copy_route() {
+  aws s3 cp "s3://$BUCKET/index.html" "s3://$BUCKET/$1" \
     --content-type "text/html; charset=utf-8" \
     --cache-control "no-cache" \
     --metadata-directive REPLACE
+}
+
+for route in login signup dashboard submissions analytics; do
+  copy_route "$route"
+done
+
+api="${PROBLEMS_API:-https://api.anandmishra.dev/api}"
+page=1
+while true; do
+  json=$(curl -fsS "$api/problems?limit=100&page=$page")
+  while IFS= read -r slug; do
+    [[ "$slug" =~ ^[a-z0-9-]{1,80}$ ]] || continue
+    copy_route "problem/$slug"
+    copy_route "problem/$slug/analytics"
+  done < <(jq -r '.problems[]?.slug // empty' <<<"$json")
+  total_pages=$(jq -r '.totalPages // 1' <<<"$json")
+  if [[ "$page" -ge "$total_pages" ]]; then
+    break
+  fi
+  page=$((page + 1))
 done
 
 aws cloudfront create-invalidation \
   --distribution-id "$DISTRIBUTION_ID" \
-  --paths "/login" "/signup" "/dashboard" "/submissions" "/analytics"
+  --paths "/login" "/signup" "/dashboard" "/submissions" "/analytics" "/problem/*"
