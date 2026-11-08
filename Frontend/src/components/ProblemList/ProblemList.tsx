@@ -10,6 +10,7 @@ import {
   buildActivityDays,
 } from "../Activity/activityGrid";
 import { AppShell } from "../Layout/AppShell";
+import { pageWindow } from "./pageWindow";
 
 const TAG_OPTIONS = [
   "Array",
@@ -30,19 +31,24 @@ const TAG_OPTIONS = [
 const PAGE_LIMIT = 20;
 const SEARCH_DEBOUNCE_MS = 250;
 
-export function pageWindow(page: number, totalPages: number): number[] {
-  if (!Number.isFinite(totalPages) || totalPages < 1) return [];
-  const pages = Math.floor(totalPages);
-  const size = Math.min(5, pages);
-  const current = Math.min(Math.max(Math.floor(page) || 1, 1), pages);
-  let start = 1;
-  if (size < pages) {
-    start = current - Math.floor(size / 2);
-    if (start < 1) start = 1;
-    const maxStart = pages - size + 1;
-    if (start > maxStart) start = maxStart;
+function mergeKnownTags(
+  current: string[],
+  problems: readonly { tags?: readonly string[] | null }[],
+  selectedTag: string,
+): string[] {
+  const next = new Set(current);
+  for (const problem of problems) {
+    for (const problemTag of problem.tags ?? []) next.add(problemTag);
   }
-  return Array.from({ length: size }, (_, index) => start + index);
+  if (selectedTag) next.add(selectedTag);
+  const sorted = [...next].sort((a, b) => a.localeCompare(b));
+  if (
+    sorted.length === current.length &&
+    sorted.every((item, index) => item === current[index])
+  ) {
+    return current;
+  }
+  return sorted;
 }
 
 function showingRange(page: number, limit: number, count: number, total: number): string {
@@ -101,6 +107,13 @@ export function ProblemList() {
   const activityTimestamps = useSubmissionActivity(isAuthenticated);
   const activityDays = buildActivityDays(activityTimestamps, 35);
   const activityCount = activityTotal(activityDays);
+  const [seenProblems, setSeenProblems] = useState<typeof problems | null>(null);
+  const [seenTag, setSeenTag] = useState<string | null>(null);
+  if (seenProblems !== problems || seenTag !== tag) {
+    setSeenProblems(problems);
+    setSeenTag(tag);
+    setKnownTags((current) => mergeKnownTags(current, problems, tag));
+  }
 
   const solvedIds = new Set(
     submissions.filter((submission) => submission.verdict === "Accepted").map((submission) => submission.problemId),
@@ -130,20 +143,6 @@ export function ProblemList() {
     setTag("");
     setPage(1);
   };
-
-  useEffect(() => {
-    setKnownTags((current) => {
-      const next = new Set(current);
-      for (const problem of problems) {
-        for (const problemTag of problem.tags ?? []) next.add(problemTag);
-      }
-      if (tag) next.add(tag);
-      const sorted = [...next].sort((a, b) => a.localeCompare(b));
-      return sorted.length === current.length && sorted.every((item, index) => item === current[index])
-        ? current
-        : sorted;
-    });
-  }, [problems, tag]);
 
   const solveStatus = (problemId: string) => {
     if (historyLoading || historyError) return "unknown";

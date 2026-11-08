@@ -1,5 +1,5 @@
 import { SubmissionStatus } from './SubmissionStatus';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useWorkspace } from '../../context/workspaceState';
 import { VerdictBadge } from '../common/VerdictBadge';
 
@@ -14,14 +14,17 @@ interface Props {
 export function NxTestPanel({ sampleInput = '', sampleOutput = '', canRetry = false }: Props) {
   const { state } = useWorkspace();
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>('testcase');
-
-  useEffect(() => {
-    if (state.isRunning || state.isSubmitting) setConsoleTab('result');
-  }, [state.isRunning, state.isSubmitting]);
-
-  useEffect(() => {
+  const running = state.isRunning || state.isSubmitting;
+  const [seenRunning, setSeenRunning] = useState(false);
+  const [seenOutput, setSeenOutput] = useState('');
+  if (running !== seenRunning) {
+    setSeenRunning(running);
+    if (running) setConsoleTab('result');
+  }
+  if (state.consoleOutput !== seenOutput) {
+    setSeenOutput(state.consoleOutput);
     if (state.consoleOutput) setConsoleTab('result');
-  }, [state.consoleOutput]);
+  }
 
   const results = state.lastResult?.results ?? [];
 

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { pageWindow } from "../src/components/ProblemList/ProblemList";
+import { pageWindow } from "../src/components/ProblemList/pageWindow";
 import { RecommendationCard } from "../src/components/Dashboard/RecommendationCard";
 import { SubmissionItem } from "../src/components/Dashboard/SubmissionItem";
 

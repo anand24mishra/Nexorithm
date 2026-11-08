@@ -36,6 +36,20 @@ describe("safeInternalPath", () => {
   it("rejects the login page", () => {
     expect(safeInternalPath("/login")).toBeNull();
   });
+
+  it("rejects ASCII control characters and keeps ordinary paths", () => {
+    expect(safeInternalPath("\n/problem/two-sum")).toBe("/problem/two-sum");
+    expect(safeInternalPath("/problem/two-sum?tab=1")).toBe(
+      "/problem/two-sum?tab=1",
+    );
+    expect(safeInternalPath("/problem/two-sum\u007f")).toBe(
+      "/problem/two-sum\u007f",
+    );
+    expect(safeInternalPath("/problem/two-\nsum")).toBeNull();
+    expect(safeInternalPath("/problem/two-sum\u0000next")).toBeNull();
+    expect(safeInternalPath("/problem/\u0001two-sum")).toBeNull();
+    expect(safeInternalPath("/problem/\u001ftwo-sum")).toBeNull();
+  });
 });
 
 describe("readReturnPath", () => {

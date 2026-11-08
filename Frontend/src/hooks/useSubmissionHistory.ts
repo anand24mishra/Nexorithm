@@ -54,6 +54,7 @@ export function useSubmissionHistory(problemId?: string, enabled = true) {
   const [problemKey, setProblemKey] = useState(problemId);
   const [loadingPage, setLoadingPage] = useState(page);
   const [enabledKey, setEnabledKey] = useState(enabled);
+  const [loadingRevision, setLoadingRevision] = useState(revision);
 
   if (problemId !== problemKey) {
     setProblemKey(problemId);
@@ -66,12 +67,26 @@ export function useSubmissionHistory(problemId?: string, enabled = true) {
     setIsLoading(enabled);
   } else if (page !== loadingPage) {
     setLoadingPage(page);
-    if (enabled) setIsLoading(true);
+    if (enabled) {
+      setIsLoading(true);
+      setError(null);
+    }
   }
 
   if (enabled !== enabledKey) {
     setEnabledKey(enabled);
-    if (enabled) setIsLoading(true);
+    if (enabled) {
+      setIsLoading(true);
+      setError(null);
+    }
+  }
+
+  if (revision !== loadingRevision) {
+    setLoadingRevision(revision);
+    if (enabled) {
+      setIsLoading(true);
+      setError(null);
+    }
   }
 
   const refresh = useCallback(() => {
@@ -79,14 +94,9 @@ export function useSubmissionHistory(problemId?: string, enabled = true) {
   }, []);
 
   useEffect(() => {
-    if (!enabled) {
-      setIsLoading(false);
-      return;
-    }
+    if (!enabled) return;
 
     const controller = new AbortController();
-    setIsLoading(true);
-    setError(null);
 
     void submissionHistoryApi
       .getPage(page, problemId, controller.signal)
@@ -113,21 +123,17 @@ export function useSubmissionHistory(problemId?: string, enabled = true) {
         if (!controller.signal.aborted) setIsLoading(false);
       });
 
-    const onUpdate = () => {
-      setIsLoading(true);
-      refresh();
-    };
-    window.addEventListener("submission-updated", onUpdate);
+    window.addEventListener("submission-updated", refresh);
     return () => {
       controller.abort();
-      window.removeEventListener("submission-updated", onUpdate);
+      window.removeEventListener("submission-updated", refresh);
     };
   }, [page, problemId, revision, refresh, enabled]);
 
   return {
     submissions,
     total,
-    isLoading,
+    isLoading: enabled && isLoading,
     error,
     refresh,
     page,

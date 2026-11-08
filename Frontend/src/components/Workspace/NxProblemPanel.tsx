@@ -31,27 +31,42 @@ export function NxProblemPanel({ problem, activeTab }: Props) {
   const isSubmissions = activeTab === 'submissions';
   const isEditorial = activeTab === 'editorial';
   const showArticle = isEditorial;
-  const [articleBlocks, setArticleBlocks] = useState<EditorialBlock[]>([]);
-  const [articleError, setArticleError] = useState<string | null>(null);
-  const [articleLoading, setArticleLoading] = useState(false);
-  const [articleReady, setArticleReady] = useState(false);
+  const requestedKey = showArticle ? problem.slug : null;
+  const [seenArticleKey, setSeenArticleKey] = useState<string | null>(null);
+  const [article, setArticle] = useState<{
+    key: string;
+    blocks: EditorialBlock[];
+    error: string | null;
+  } | null>(null);
+  if (requestedKey !== seenArticleKey) {
+    setSeenArticleKey(requestedKey);
+    setArticle(null);
+  }
 
   useEffect(() => {
-    if (!showArticle) return;
+    if (!requestedKey) return;
     const controller = new AbortController();
-    setArticleLoading(true);
-    setArticleReady(false);
-    setArticleError(null);
-    setArticleBlocks([]);
-    fetchOfficialSolution(problem.slug, controller.signal)
-      .then((blocks) => { if (!controller.signal.aborted) setArticleBlocks(blocks); })
+    const key = requestedKey;
+    fetchOfficialSolution(key, controller.signal)
+      .then((blocks) => {
+        if (controller.signal.aborted) return;
+        setArticle({ key, blocks, error: null });
+      })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setArticleError(error instanceof Error ? error.message : 'Editorial is unavailable right now.');
-      })
-      .finally(() => { if (!controller.signal.aborted) { setArticleLoading(false); setArticleReady(true); } });
+        setArticle({
+          key,
+          blocks: [],
+          error: error instanceof Error ? error.message : 'Editorial is unavailable right now.',
+        });
+      });
     return () => controller.abort();
-  }, [problem.slug, showArticle]);
+  }, [requestedKey]);
+
+  const articleReady = article !== null && article.key === requestedKey;
+  const articleLoading = requestedKey !== null && !articleReady;
+  const articleError = articleReady ? article.error : null;
+  const articleBlocks = articleReady ? article.blocks : [];
 
   const panelTitle = isSubmissions ? 'Submissions' : isEditorial ? 'Editorial' : 'Description';
 

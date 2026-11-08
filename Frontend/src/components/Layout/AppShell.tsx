@@ -34,6 +34,7 @@ export function AppShell({
 
   useEffect(() => {
     if (!open) return;
+    const menuButton = menuButtonRef.current;
     const root = drawerRef.current;
     const previously = document.activeElement as HTMLElement | null;
     const focusable = () =>
@@ -69,7 +70,7 @@ export function AppShell({
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
-      (previously ?? menuButtonRef.current)?.focus();
+      (previously ?? menuButton)?.focus();
     };
   }, [open]);
 

@@ -29,6 +29,12 @@ function WorkspaceShell() {
   const [sideTab, setSideTab] = useState<SideTab>('problem');
   const [pane, setPane] = useState<Pane>('code');
   const { state, dispatch } = useWorkspace();
+  const workspaceBusy = state.isRunning || state.isSubmitting;
+  const [seenWorkspaceBusy, setSeenWorkspaceBusy] = useState(false);
+  if (workspaceBusy !== seenWorkspaceBusy) {
+    setSeenWorkspaceBusy(workspaceBusy);
+    if (workspaceBusy) setPane('results');
+  }
   const { runCode, submitCode, isRunning, isSubmitting, canRetryStatus } = useSubmission();
   const [browserFullscreen, setBrowserFullscreen] = useState(false);
   const [acceptedNote, setAcceptedNote] = useState(false);
@@ -92,10 +98,6 @@ function WorkspaceShell() {
       };
     }
   }, [state.lastResult]);
-
-  useEffect(() => {
-    if (state.isRunning || state.isSubmitting) setPane('results');
-  }, [state.isRunning, state.isSubmitting]);
 
   const goToPrev = useCallback(() => {
     if (!problem || !problems.length) return;

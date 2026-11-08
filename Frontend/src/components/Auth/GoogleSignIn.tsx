@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? "";
+import { GOOGLE_CLIENT_ID } from "./googleClientId";
 
 type GoogleButtonText = "signin_with" | "signup_with" | "continue_with";
 
